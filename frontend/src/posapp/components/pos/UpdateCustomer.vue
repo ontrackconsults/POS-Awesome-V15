@@ -949,20 +949,9 @@ export default {
 			this.custom_country_code = countryCodeMap[this.custom_country_name] || "";
 		},
 		handleGroupChange() {
-			// Check if customer group requires customer ID
-			if (this.group) {
-				frappe.db
-					.get_value("Customer Group", this.group, "custom_customer_id")
-					.then((data) => {
-						this.reqd_customer_id = data.message.custom_customer_id || false;
-					})
-					.catch((error) => {
-						console.error("Error checking customer group:", error);
-						this.reqd_customer_id = false;
-					});
-			} else {
-				this.reqd_customer_id = false;
-			}
+			// Customer ID requirement is not currently implemented
+			// This functionality can be added later if needed
+			this.reqd_customer_id = false;
 		},
 		getCustomerGroups() {
 			if (this.groups.length > 0) return;
