@@ -27,6 +27,8 @@
 									class="pos-themed-input"
 									v-model="custom_customer_name"
 									readonly
+									
+									
 								></v-text-field>
 							</v-col>
 							<v-col cols="6">
@@ -105,6 +107,7 @@
 									class="pos-themed-input"
 									required
 									@update:model-value="updateCountryCode"
+									
 								></v-select>
 							</v-col>
 							<v-col cols="6">
@@ -284,7 +287,7 @@ export default {
 		customer_first_name: "",
 		customer_last_name: "",
 		custom_customer_id: "",
-		custom_country_name: "",
+		custom_country_name: "Ghana",
 		custom_country_code: "",
 		tax_id: "",
 		mobile_no: "",
@@ -667,7 +670,7 @@ export default {
 			this.customer_first_name = "";
 			this.customer_last_name = "";
 			this.custom_customer_id = "";
-			this.custom_country_name = "";
+			this.custom_country_name = "Ghana";
 			this.custom_country_code = "";
 			this.tax_id = "";
 			this.mobile_no = "";
@@ -1237,13 +1240,13 @@ export default {
 				this.customer_first_name = data.custom_customer_first_name || "";
 				this.customer_last_name = data.custom_customer_last_name || "";
 				this.custom_customer_id = data.custom_customer_id || "";
-				this.custom_country_name = data.custom_country_name || data.country || "Pakistan";
+				this.custom_country_name = data.custom_country_name || data.country || "Ghana";
 				this.custom_country_code = data.custom_country_code || "";
 				this.customer_id = data.name;
 				this.address_line1 = data.address_line1 || "";
 				this.city = data.city || "";
 				this.country =
-					data.country || (this.pos_profile && this.pos_profile.posa_default_country) || "Pakistan";
+					data.country || (this.pos_profile && this.pos_profile.posa_default_country) || "Ghana";
 				this.tax_id = data.tax_id;
 				this.mobile_no = data.mobile_no;
 				this.email_id = data.email_id;
@@ -1260,16 +1263,18 @@ export default {
 					this.handleGroupChange();
 				}
 			} else {
-				this.country = (this.pos_profile && this.pos_profile.posa_default_country) || "Pakistan";
+				this.country = (this.pos_profile && this.pos_profile.posa_default_country) || "Ghana";
 			}
 		});
 		this.eventBus.on("register_pos_profile", (data) => {
 			this.pos_profile = data.pos_profile;
-			this.country = (this.pos_profile && this.pos_profile.posa_default_country) || "Pakistan";
+			this.country = (this.pos_profile && this.pos_profile.posa_default_country) || "Ghana";
+			this.custom_country_name = "Ghana";
 		});
 		this.eventBus.on("payments_register_pos_profile", (data) => {
 			this.pos_profile = data.pos_profile;
-			this.country = (this.pos_profile && this.pos_profile.posa_default_country) || "Pakistan";
+			this.country = (this.pos_profile && this.pos_profile.posa_default_country) || "Ghana";
+			this.custom_country_name = "Ghana";
 		});
 		this.getCustomerGroups();
 		this.getCustomerTerritorys();
