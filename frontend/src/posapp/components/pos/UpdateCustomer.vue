@@ -25,10 +25,37 @@
 									:label="frappe._('Customer Name') + ' *'"
 									hide-details
 									class="pos-themed-input"
-									v-model="customer_name"
+									v-model="custom_customer_name"
+									readonly
+									
+									
 								></v-text-field>
 							</v-col>
 							<v-col cols="6">
+								<v-text-field
+									density="compact"
+									color="primary"
+									:label="frappe._('Customer First Name') + ' *'"
+									hide-details
+									class="pos-themed-input"
+									v-model="customer_first_name"
+									required
+									@input="updateCustomerName"
+								></v-text-field>
+							</v-col>
+							<v-col cols="6">
+								<v-text-field
+									density="compact"
+									color="primary"
+									:label="frappe._('Customer Last Name') + ' *'"
+									hide-details
+									class="pos-themed-input"
+									v-model="customer_last_name"
+									required
+									@input="updateCustomerName"
+								></v-text-field>
+							</v-col>
+							<!-- <v-col cols="6">
 								<v-text-field
 									density="compact"
 									color="primary"
@@ -37,15 +64,16 @@
 									hide-details
 									v-model="tax_id"
 								></v-text-field>
-							</v-col>
+							</v-col> -->
 							<v-col cols="6">
 								<v-text-field
 									density="compact"
 									color="primary"
-									:label="frappe._('Mobile No')"
+									:label="frappe._('Mobile No') + ' *'"
 									class="pos-themed-input"
 									hide-details
 									v-model="mobile_no"
+									required
 								></v-text-field>
 							</v-col>
 							<v-col cols="12" v-if="!hideNonEssential">
@@ -69,18 +97,32 @@
 								></v-text-field>
 							</v-col>
 
-							<v-col cols="12" sm="6" v-if="!hideNonEssential">
+							<v-col cols="6">
 								<v-select
-									v-model="country"
+									v-model="custom_country_name"
 									:items="countries"
 									variant="outlined"
 									density="compact"
-									:label="__('Country')"
+									:label="__('Country') + ' *'"
 									class="pos-themed-input"
+									required
+									@update:model-value="updateCountryCode"
+									
 								></v-select>
 							</v-col>
-
 							<v-col cols="6">
+								<v-text-field
+									density="compact"
+									color="primary"
+									:label="frappe._('Country Code')"
+									hide-details
+									class="pos-themed-input"
+									v-model="custom_country_code"
+									readonly
+								></v-text-field>
+							</v-col>
+
+							<!-- <v-col cols="6">
 								<v-text-field
 									density="compact"
 									color="primary"
@@ -89,7 +131,7 @@
 									hide-details
 									v-model="email_id"
 								></v-text-field>
-							</v-col>
+							</v-col> -->
 							<v-col cols="6">
 								<v-select
 									density="compact"
@@ -122,7 +164,7 @@
 									class="pos-themed-input"
 								></v-text-field>
 							</v-col>
-							<v-col cols="6" v-if="!hideNonEssential">
+							<v-col cols="6">
 								<v-autocomplete
 									clearable
 									density="compact"
@@ -135,10 +177,11 @@
 									:no-data-text="__('Group not found')"
 									hide-details
 									required
+									@update:model-value="handleGroupChange"
 								>
 								</v-autocomplete>
 							</v-col>
-							<v-col cols="6" v-if="!hideNonEssential">
+							<v-col cols="6">
 								<v-autocomplete
 									clearable
 									density="compact"
@@ -172,6 +215,27 @@
 									readonly
 									hide-details
 									class="pos-themed-input"
+								></v-text-field>
+							</v-col>
+							<v-col cols="6" v-if="reqd_customer_id">
+								<v-text-field
+									density="compact"
+									color="primary"
+									:label="frappe._('Customer ID') + ' *'"
+									hide-details
+									class="pos-themed-input"
+									v-model="custom_customer_id"
+									required
+								></v-text-field>
+							</v-col>
+							<v-col cols="6" v-else>
+								<v-text-field
+									density="compact"
+									color="primary"
+									:label="frappe._('Customer ID')"
+									hide-details
+									class="pos-themed-input"
+									v-model="custom_customer_id"
 								></v-text-field>
 							</v-col>
 						</v-row>
@@ -219,6 +283,12 @@ export default {
 		pos_profile: "",
 		customer_id: "",
 		customer_name: "",
+		custom_customer_name: "",
+		customer_first_name: "",
+		customer_last_name: "",
+		custom_customer_id: "",
+		custom_country_name: "Ghana",
+		custom_country_code: "",
 		tax_id: "",
 		mobile_no: "",
 		address_line1: "",
@@ -238,44 +308,252 @@ export default {
 		loyalty_points: null,
 		loyalty_program: null,
 		hideNonEssential: false,
+		reqd_customer_id: false,
 		countries: [
 			"Afghanistan",
+			"Albania",
+			"Algeria",
+			"American Samoa",
+			"Andorra",
+			"Angola",
+			"Anguilla",
+			"Antigua and Barbuda",
+			"Argentina",
+			"Armenia",
+			"Aruba",
 			"Australia",
+			"Austria",
+			"Azerbaijan",
+			"Bahamas",
 			"Bahrain",
 			"Bangladesh",
+			"Barbados",
+			"Belarus",
+			"Belgium",
+			"Belize",
+			"Benin",
+			"Bermuda",
+			"Bhutan",
+			"Bolivia",
+			"Bonaire, Sint Eustatius and Saba",
+			"Bosnia and Herzegovina",
+			"Botswana",
+			"Brazil",
+			"British Virgin Islands",
+			"Brunei",
+			"Bulgaria",
+			"Burkina Faso",
+			"Burundi",
+			"Cabo Verde",
+			"Cambodia",
+			"Cameroon",
 			"Canada",
+			"Cayman Islands",
+			"Central African Republic",
+			"Chad",
+			"Chile",
 			"China",
+			"Christmas Island",
+			"Cocos (Keeling) Islands",
+			"Colombia",
+			"Comoros",
+			"Congo",
+			"Cook Islands",
+			"Costa Rica",
+			"Côte d'Ivoire",
+			"Croatia",
+			"Cuba",
+			"Curaçao",
+			"Cyprus",
+			"Czech Republic",
+			"Democratic Republic of the Congo",
 			"Denmark",
+			"Djibouti",
+			"Dominica",
+			"Dominican Republic",
+			"Ecuador",
+			"Egypt",
+			"El Salvador",
+			"Equatorial Guinea",
+			"Eritrea",
+			"Estonia",
+			"Eswatini",
+			"Ethiopia",
+			"Falkland Islands",
+			"Faroe Islands",
+			"Fiji",
+			"Finland",
 			"France",
+			"French Guiana",
+			"French Polynesia",
+			"Gabon",
+			"Gambia",
+			"Georgia",
 			"Germany",
+			"Ghana",
+			"Gibraltar",
+			"Greece",
+			"Greenland",
+			"Grenada",
+			"Guadeloupe",
+			"Guam",
+			"Guatemala",
+			"Guernsey",
+			"Guinea",
+			"Guinea-Bissau",
+			"Guyana",
+			"Haiti",
+			"Holy See",
+			"Honduras",
+			"Hong Kong",
+			"Hungary",
+			"Iceland",
 			"India",
 			"Indonesia",
+			"Iran",
+			"Iraq",
+			"Ireland",
+			"Isle of Man",
+			"Israel",
 			"Italy",
+			"Jamaica",
 			"Japan",
+			"Jersey",
+			"Jordan",
+			"Kazakhstan",
+			"Kenya",
+			"Kiribati",
 			"Kuwait",
+			"Kyrgyzstan",
+			"Laos",
+			"Latvia",
+			"Lebanon",
+			"Lesotho",
+			"Liberia",
+			"Libya",
+			"Liechtenstein",
+			"Lithuania",
+			"Luxembourg",
+			"Macao",
+			"Madagascar",
+			"Malawi",
 			"Malaysia",
+			"Maldives",
+			"Mali",
+			"Malta",
+			"Marshall Islands",
+			"Martinique",
+			"Mauritania",
+			"Mauritius",
+			"Mayotte",
+			"Mexico",
+			"Micronesia",
+			"Moldova",
+			"Monaco",
+			"Mongolia",
+			"Montenegro",
+			"Montserrat",
+			"Morocco",
+			"Mozambique",
+			"Myanmar",
+			"Namibia",
+			"Nauru",
 			"Nepal",
 			"Netherlands",
+			"New Caledonia",
 			"New Zealand",
+			"Nicaragua",
+			"Niger",
+			"Nigeria",
+			"Niue",
+			"Norfolk Island",
+			"North Korea",
+			"North Macedonia",
+			"Northern Mariana Islands",
 			"Norway",
 			"Oman",
 			"Pakistan",
+			"Palau",
+			"Palestine",
+			"Panama",
+			"Papua New Guinea",
+			"Paraguay",
+			"Peru",
 			"Philippines",
+			"Pitcairn",
+			"Poland",
+			"Portugal",
+			"Puerto Rico",
 			"Qatar",
+			"Romania",
+			"Russia",
+			"Rwanda",
+			"Réunion",
+			"Saint Barthélemy",
+			"Saint Helena, Ascension and Tristan da Cunha",
+			"Saint Kitts and Nevis",
+			"Saint Lucia",
+			"Saint Martin",
+			"Saint Pierre and Miquelon",
+			"Saint Vincent and the Grenadines",
+			"Samoa",
+			"San Marino",
+			"Sao Tome and Principe",
 			"Saudi Arabia",
+			"Senegal",
+			"Serbia",
+			"Seychelles",
+			"Sierra Leone",
 			"Singapore",
+			"Sint Maarten",
+			"Slovakia",
+			"Slovenia",
+			"Solomon Islands",
+			"Somalia",
+			"South Africa",
+			"South Georgia and the South Sandwich Islands",
 			"South Korea",
+			"South Sudan",
 			"Spain",
 			"Sri Lanka",
+			"Sudan",
+			"Suriname",
+			"Svalbard and Jan Mayen",
 			"Sweden",
 			"Switzerland",
 			"Syria",
+			"Taiwan",
+			"Tajikistan",
+			"Tanzania",
 			"Thailand",
+			"Timor-Leste",
+			"Togo",
+			"Tokelau",
+			"Tonga",
+			"Trinidad and Tobago",
+			"Tunisia",
+			"Turkey",
+			"Turkmenistan",
+			"Turks and Caicos Islands",
+			"Tuvalu",
+			"Uganda",
+			"Ukraine",
 			"United Arab Emirates",
 			"United Kingdom",
 			"United States",
+			"United States Minor Outlying Islands",
+			"Uruguay",
+			"Uzbekistan",
+			"Vanuatu",
+			"Venezuela",
 			"Vietnam",
+			"Virgin Islands, British",
+			"Virgin Islands, U.S.",
+			"Wallis and Futuna",
+			"Western Sahara",
 			"Yemen",
+			"Zambia",
+			"Zimbabwe",
 		],
 	}),
 	watch: {
@@ -388,6 +666,12 @@ export default {
 		},
 		clear_customer() {
 			this.customer_name = "";
+			this.custom_customer_name = "";
+			this.customer_first_name = "";
+			this.customer_last_name = "";
+			this.custom_customer_id = "";
+			this.custom_country_name = "Ghana";
+			this.custom_country_code = "";
 			this.tax_id = "";
 			this.mobile_no = "";
 			this.address_line1 = "";
@@ -403,6 +687,274 @@ export default {
 			this.gender = "";
 			this.loyalty_points = null;
 			this.loyalty_program = null;
+			this.reqd_customer_id = false;
+		},
+		updateCustomerName() {
+			const first = this.customer_first_name ? this.customer_first_name.trim() : "";
+			const last = this.customer_last_name ? this.customer_last_name.trim() : "";
+			const mobile = this.mobile_no ? this.mobile_no.trim() : "";
+
+			// custom_customer_name is just first + last name
+			this.custom_customer_name = `${first} ${last}`.trim();
+
+			// customer_name is first + last + mobile_no (for doctype name)
+			this.customer_name = `${first} ${last} ${mobile}`.trim();
+		},
+		updateCountryCode() {
+			// Map country names to country codes
+			const countryCodeMap = {
+				Afghanistan: "+93",
+				Albania: "+355",
+				Algeria: "+213",
+				"American Samoa": "+1",
+				Andorra: "+376",
+				Angola: "+244",
+				Anguilla: "+1",
+				"Antigua and Barbuda": "+1",
+				Argentina: "+54",
+				Armenia: "+374",
+				Aruba: "+297",
+				Australia: "+61",
+				Austria: "+43",
+				Azerbaijan: "+994",
+				Bahamas: "+1",
+				Bahrain: "+973",
+				Bangladesh: "+880",
+				Barbados: "+1",
+				Belarus: "+375",
+				Belgium: "+32",
+				Belize: "+501",
+				Benin: "+229",
+				Bermuda: "+1",
+				Bhutan: "+975",
+				Bolivia: "+591",
+				"Bonaire, Sint Eustatius and Saba": "+599",
+				"Bosnia and Herzegovina": "+387",
+				Botswana: "+267",
+				Brazil: "+55",
+				"British Virgin Islands": "+1",
+				Brunei: "+673",
+				Bulgaria: "+359",
+				"Burkina Faso": "+226",
+				Burundi: "+257",
+				"Cabo Verde": "+238",
+				Cambodia: "+855",
+				Cameroon: "+237",
+				Canada: "+1",
+				"Cayman Islands": "+1",
+				"Central African Republic": "+236",
+				Chad: "+235",
+				Chile: "+56",
+				China: "+86",
+				"Christmas Island": "+61",
+				"Cocos (Keeling) Islands": "+61",
+				Colombia: "+57",
+				Comoros: "+269",
+				Congo: "+242",
+				"Cook Islands": "+682",
+				"Costa Rica": "+506",
+				"Côte d'Ivoire": "+225",
+				Croatia: "+385",
+				Cuba: "+53",
+				Curaçao: "+599",
+				Cyprus: "+357",
+				"Czech Republic": "+420",
+				"Democratic Republic of the Congo": "+243",
+				Denmark: "+45",
+				Djibouti: "+253",
+				Dominica: "+1",
+				"Dominican Republic": "+1",
+				Ecuador: "+593",
+				Egypt: "+20",
+				"El Salvador": "+503",
+				"Equatorial Guinea": "+240",
+				Eritrea: "+291",
+				Estonia: "+372",
+				Eswatini: "+268",
+				Ethiopia: "+251",
+				"Falkland Islands": "+500",
+				"Faroe Islands": "+298",
+				Fiji: "+679",
+				Finland: "+358",
+				France: "+33",
+				"French Guiana": "+594",
+				"French Polynesia": "+689",
+				Gabon: "+241",
+				Gambia: "+220",
+				Georgia: "+995",
+				Germany: "+49",
+				Ghana: "+233",
+				Gibraltar: "+350",
+				Greece: "+30",
+				Greenland: "+299",
+				Grenada: "+1",
+				Guadeloupe: "+590",
+				Guam: "+1",
+				Guatemala: "+502",
+				Guernsey: "+44",
+				Guinea: "+224",
+				"Guinea-Bissau": "+245",
+				Guyana: "+592",
+				Haiti: "+509",
+				"Holy See": "+379",
+				Honduras: "+504",
+				"Hong Kong": "+852",
+				Hungary: "+36",
+				Iceland: "+354",
+				India: "+91",
+				Indonesia: "+62",
+				Iran: "+98",
+				Iraq: "+964",
+				Ireland: "+353",
+				"Isle of Man": "+44",
+				Israel: "+972",
+				Italy: "+39",
+				Jamaica: "+1",
+				Japan: "+81",
+				Jersey: "+44",
+				Jordan: "+962",
+				Kazakhstan: "+7",
+				Kenya: "+254",
+				Kiribati: "+686",
+				Kuwait: "+965",
+				Kyrgyzstan: "+996",
+				Laos: "+856",
+				Latvia: "+371",
+				Lebanon: "+961",
+				Lesotho: "+266",
+				Liberia: "+231",
+				Libya: "+218",
+				Liechtenstein: "+423",
+				Lithuania: "+370",
+				Luxembourg: "+352",
+				Macao: "+853",
+				Madagascar: "+261",
+				Malawi: "+265",
+				Malaysia: "+60",
+				Maldives: "+960",
+				Mali: "+223",
+				Malta: "+356",
+				"Marshall Islands": "+692",
+				Martinique: "+596",
+				Mauritania: "+222",
+				Mauritius: "+230",
+				Mayotte: "+262",
+				Mexico: "+52",
+				Micronesia: "+691",
+				Moldova: "+373",
+				Monaco: "+377",
+				Mongolia: "+976",
+				Montenegro: "+382",
+				Montserrat: "+1",
+				Morocco: "+212",
+				Mozambique: "+258",
+				Myanmar: "+95",
+				Namibia: "+264",
+				Nauru: "+674",
+				Nepal: "+977",
+				Netherlands: "+31",
+				"New Caledonia": "+687",
+				"New Zealand": "+64",
+				Nicaragua: "+505",
+				Niger: "+227",
+				Nigeria: "+234",
+				Niue: "+683",
+				"Norfolk Island": "+672",
+				"North Korea": "+850",
+				"North Macedonia": "+389",
+				"Northern Mariana Islands": "+1",
+				Norway: "+47",
+				Oman: "+968",
+				Pakistan: "+92",
+				Palau: "+680",
+				Palestine: "+970",
+				Panama: "+507",
+				"Papua New Guinea": "+675",
+				Paraguay: "+595",
+				Peru: "+51",
+				Philippines: "+63",
+				Pitcairn: "+64",
+				Poland: "+48",
+				Portugal: "+351",
+				"Puerto Rico": "+1",
+				Qatar: "+974",
+				Romania: "+40",
+				Russia: "+7",
+				Rwanda: "+250",
+				Réunion: "+262",
+				"Saint Barthélemy": "+590",
+				"Saint Helena, Ascension and Tristan da Cunha": "+290",
+				"Saint Kitts and Nevis": "+1",
+				"Saint Lucia": "+1",
+				"Saint Martin": "+590",
+				"Saint Pierre and Miquelon": "+508",
+				"Saint Vincent and the Grenadines": "+1",
+				Samoa: "+685",
+				"San Marino": "+378",
+				"Sao Tome and Principe": "+239",
+				"Saudi Arabia": "+966",
+				Senegal: "+221",
+				Serbia: "+381",
+				Seychelles: "+248",
+				"Sierra Leone": "+232",
+				Singapore: "+65",
+				"Sint Maarten": "+1",
+				Slovakia: "+421",
+				Slovenia: "+386",
+				"Solomon Islands": "+677",
+				Somalia: "+252",
+				"South Africa": "+27",
+				"South Georgia and the South Sandwich Islands": "+500",
+				"South Korea": "+82",
+				"South Sudan": "+211",
+				Spain: "+34",
+				"Sri Lanka": "+94",
+				Sudan: "+249",
+				Suriname: "+597",
+				"Svalbard and Jan Mayen": "+47",
+				Sweden: "+46",
+				Switzerland: "+41",
+				Syria: "+963",
+				Taiwan: "+886",
+				Tajikistan: "+992",
+				Tanzania: "+255",
+				Thailand: "+66",
+				"Timor-Leste": "+670",
+				Togo: "+228",
+				Tokelau: "+690",
+				Tonga: "+676",
+				"Trinidad and Tobago": "+1",
+				Tunisia: "+216",
+				Turkey: "+90",
+				Turkmenistan: "+993",
+				"Turks and Caicos Islands": "+1",
+				Tuvalu: "+688",
+				Uganda: "+256",
+				Ukraine: "+380",
+				"United Arab Emirates": "+971",
+				"United Kingdom": "+44",
+				"United States": "+1",
+				"United States Minor Outlying Islands": "+1",
+				Uruguay: "+598",
+				Uzbekistan: "+998",
+				Vanuatu: "+678",
+				Venezuela: "+58",
+				Vietnam: "+84",
+				"Virgin Islands, British": "+1",
+				"Virgin Islands, U.S.": "+1",
+				"Wallis and Futuna": "+681",
+				"Western Sahara": "+212",
+				Yemen: "+967",
+				Zambia: "+260",
+				Zimbabwe: "+263",
+			};
+
+			this.custom_country_code = countryCodeMap[this.custom_country_name] || "";
+		},
+		handleGroupChange() {
+			// Customer ID requirement is not currently implemented
+			// This functionality can be added later if needed
+			this.reqd_customer_id = false;
 		},
 		getCustomerGroups() {
 			if (this.groups.length > 0) return;
@@ -470,8 +1022,28 @@ export default {
 		},
 		async submit_dialog() {
 			const vm = this;
-			if (!this.customer_name) {
+			if (!this.customer_first_name) {
+				frappe.throw(__("Customer First Name is required"));
+				return;
+			}
+
+			if (!this.customer_last_name) {
+				frappe.throw(__("Customer Last Name is required"));
+				return;
+			}
+
+			if (!this.mobile_no) {
+				frappe.throw(__("Mobile No is required"));
+				return;
+			}
+
+			if (!this.custom_customer_name) {
 				frappe.throw(__("Customer Name is required"));
+				return;
+			}
+
+			if (this.reqd_customer_id && !this.custom_customer_id) {
+				frappe.throw(__("Customer ID is required for this customer group"));
 				return;
 			}
 
@@ -541,6 +1113,12 @@ export default {
 			const args = {
 				customer_id: this.customer_id,
 				customer_name: this.customer_name,
+				custom_customer_name: this.custom_customer_name,
+				customer_first_name: this.customer_first_name,
+				customer_last_name: this.customer_last_name,
+				custom_customer_id: this.custom_customer_id,
+				custom_country_name: this.custom_country_name,
+				custom_country_code: this.custom_country_code,
 				tax_id: this.tax_id,
 				mobile_no: this.mobile_no,
 				address_line1: this.address_line1,
@@ -658,11 +1236,17 @@ export default {
 
 			if (data) {
 				this.customer_name = data.customer_name;
+				this.custom_customer_name = data.custom_customer_name || data.customer_name;
+				this.customer_first_name = data.custom_customer_first_name || "";
+				this.customer_last_name = data.custom_customer_last_name || "";
+				this.custom_customer_id = data.custom_customer_id || "";
+				this.custom_country_name = data.custom_country_name || data.country || "Ghana";
+				this.custom_country_code = data.custom_country_code || "";
 				this.customer_id = data.name;
 				this.address_line1 = data.address_line1 || "";
 				this.city = data.city || "";
 				this.country =
-					data.country || (this.pos_profile && this.pos_profile.posa_default_country) || "Pakistan";
+					data.country || (this.pos_profile && this.pos_profile.posa_default_country) || "Ghana";
 				this.tax_id = data.tax_id;
 				this.mobile_no = data.mobile_no;
 				this.email_id = data.email_id;
@@ -673,17 +1257,24 @@ export default {
 				this.loyalty_points = data.loyalty_points;
 				this.loyalty_program = data.loyalty_program;
 				this.gender = data.gender;
+
+				// Check if customer group requires customer ID
+				if (this.group) {
+					this.handleGroupChange();
+				}
 			} else {
-				this.country = (this.pos_profile && this.pos_profile.posa_default_country) || "Pakistan";
+				this.country = (this.pos_profile && this.pos_profile.posa_default_country) || "Ghana";
 			}
 		});
 		this.eventBus.on("register_pos_profile", (data) => {
 			this.pos_profile = data.pos_profile;
-			this.country = (this.pos_profile && this.pos_profile.posa_default_country) || "Pakistan";
+			this.country = (this.pos_profile && this.pos_profile.posa_default_country) || "Ghana";
+			this.custom_country_name = "Ghana";
 		});
 		this.eventBus.on("payments_register_pos_profile", (data) => {
 			this.pos_profile = data.pos_profile;
-			this.country = (this.pos_profile && this.pos_profile.posa_default_country) || "Pakistan";
+			this.country = (this.pos_profile && this.pos_profile.posa_default_country) || "Ghana";
+			this.custom_country_name = "Ghana";
 		});
 		this.getCustomerGroups();
 		this.getCustomerTerritorys();
