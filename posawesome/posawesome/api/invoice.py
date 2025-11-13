@@ -300,6 +300,28 @@ def apply_tax_inclusive(doc):
         doc.calculate_taxes_and_totals()
 
 
+def set_naming_series_from_pos_profile(doc,method=None):
+    """Set naming series from POS Profile custom_naming_series field if Sales Invoice is POS"""
+    if not doc.is_pos:
+        return
+    
+    # Only set naming series if document is new (hasn't been saved yet)
+    # Check if document is local (new) or if name starts with "New" (Frappe's temporary name)
+    if doc.name and not (doc.get("__islocal") or doc.name.startswith("New")):
+        return
+    
+    if not doc.pos_profile:
+        return
+    
+    # Get custom_naming_series from POS Profile
+    custom_naming_series = frappe.get_cached_value(
+        "POS Profile", doc.pos_profile, "custom_naming_series"
+    )
+    
+    if custom_naming_series:
+        doc.naming_series = custom_naming_series
+    print(doc.naming_series)
+
 def validate_shift(doc):
     if doc.posa_pos_opening_shift and doc.pos_profile and doc.is_pos:
         # check if shift is open
