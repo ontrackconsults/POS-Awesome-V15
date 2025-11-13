@@ -27,6 +27,8 @@
 									class="pos-themed-input"
 									v-model="custom_customer_name"
 									readonly
+									
+									
 								></v-text-field>
 							</v-col>
 							<v-col cols="6">
@@ -69,9 +71,15 @@
 									color="primary"
 									:label="frappe._('Mobile No') + ' *'"
 									class="pos-themed-input"
-									hide-details
+									:error="mobileNoError"
+									:error-messages="mobileNoError ? mobileNoErrorMessage : ''"
 									v-model="mobile_no"
 									required
+									type="tel"
+									:maxlength="custom_country_name === 'Ghana' ? 10 : undefined"
+									:counter="custom_country_name === 'Ghana' ? 10 : undefined"
+									@input="limitMobileNoForGhana"
+									@paste="handleMobileNoPaste"
 								></v-text-field>
 							</v-col>
 							<v-col cols="12" v-if="!hideNonEssential">
@@ -105,6 +113,7 @@
 									class="pos-themed-input"
 									required
 									@update:model-value="updateCountryCode"
+									
 								></v-select>
 							</v-col>
 							<v-col cols="6">
@@ -136,7 +145,7 @@
 									:items="genders"
 									v-model="gender"
 									class="pos-themed-input"
-								></v-select>
+								></v-select>¬
 							</v-col>
 							<v-col cols="6">
 								<v-text-field
@@ -284,10 +293,12 @@ export default {
 		customer_first_name: "",
 		customer_last_name: "",
 		custom_customer_id: "",
-		custom_country_name: "",
+		custom_country_name: "Ghana",
 		custom_country_code: "",
 		tax_id: "",
 		mobile_no: "",
+		mobileNoError: false,
+		mobileNoErrorMessage: "",
 		address_line1: "",
 		city: "",
 		country: "Pakistan",
@@ -559,6 +570,24 @@ export default {
 				localStorage.setItem("posawesome_hide_non_essential_fields", JSON.stringify(val));
 			}
 		},
+		custom_country_name(newVal) {
+			console.log(newVal);	
+			// Limit mobile number to 10 characters when country is Ghana
+			if (newVal === "Ghana" && this.mobile_no && this.mobile_no.length > 10) {
+				this.mobileNoError = true;
+				this.mobileNoErrorMessage = __("Mobile number must be 10 digits or less for Ghana");
+				this.mobile_no = this.mobile_no.substring(0, 10);
+				// Clear error after a short delay
+				setTimeout(() => {
+					this.mobileNoError = false;
+					this.mobileNoErrorMessage = "";
+				}, 3000);
+			} else {
+				// Clear error when country is not Ghana
+				this.mobileNoError = false;
+				this.mobileNoErrorMessage = "";
+			}
+		},
 		birthday(newVal) {
 			// Check if the user has entered 8 digits without separators (e.g., 04111994)
 			if (newVal && /^\d{8}$/.test(newVal)) {
@@ -667,10 +696,12 @@ export default {
 			this.customer_first_name = "";
 			this.customer_last_name = "";
 			this.custom_customer_id = "";
-			this.custom_country_name = "";
+			this.custom_country_name = "Ghana";
 			this.custom_country_code = "";
 			this.tax_id = "";
 			this.mobile_no = "";
+			this.mobileNoError = false;
+			this.mobileNoErrorMessage = "";
 			this.address_line1 = "";
 			this.city = "";
 			this.country = (this.pos_profile && this.pos_profile.posa_default_country) || "Pakistan";
@@ -685,6 +716,56 @@ export default {
 			this.loyalty_points = null;
 			this.loyalty_program = null;
 			this.reqd_customer_id = false;
+		},
+		limitMobileNoForGhana() {
+			if (this.custom_country_name === "Ghana") {
+				// Immediately truncate if exceeds 10 characters
+				if (this.mobile_no && this.mobile_no.length > 10) {
+					this.mobile_no = this.mobile_no.substring(0, 10);
+					this.mobileNoError = true;
+					this.mobileNoErrorMessage = __("Mobile number must be 10 digits or less for Ghana");
+					// Clear error after a short delay
+					setTimeout(() => {
+						this.mobileNoError = false;
+						this.mobileNoErrorMessage = "";
+					}, 3000);
+				} else if (this.mobile_no && this.mobile_no.length === 10) {
+					this.mobileNoError = false;
+					this.mobileNoErrorMessage = "";
+				} else if (!this.mobile_no || this.mobile_no.length < 10) {
+					this.mobileNoError = false;
+					this.mobileNoErrorMessage = "";
+				}
+			} else {
+				this.mobileNoError = false;
+				this.mobileNoErrorMessage = "";
+			}
+		},
+		handleMobileNoPaste(event) {
+			if (this.custom_country_name === "Ghana") {
+				// Get pasted text
+				const pastedText = (event.clipboardData || window.clipboardData).getData("text");
+				// Prevent default paste
+				event.preventDefault();
+				// Find the actual input element (Vuetify wraps it)
+				const input = event.target.querySelector("input") || event.target;
+				const start = input.selectionStart || 0;
+				const end = input.selectionEnd || 0;
+				// Calculate new value
+				const currentValue = this.mobile_no || "";
+				const newValue = currentValue.substring(0, start) + pastedText + currentValue.substring(end);
+				// Limit to 10 characters
+				this.mobile_no = newValue.substring(0, 10);
+				// Set cursor position
+				this.$nextTick(() => {
+					const newInput = event.target.querySelector("input") || event.target;
+					if (newInput && newInput.setSelectionRange) {
+						const cursorPos = Math.min(this.mobile_no.length, start + pastedText.length);
+						newInput.setSelectionRange(cursorPos, cursorPos);
+					}
+					this.limitMobileNoForGhana();
+				});
+			}
 		},
 		updateCustomerName() {
 			const first = this.customer_first_name ? this.customer_first_name.trim() : "";
@@ -1237,13 +1318,13 @@ export default {
 				this.customer_first_name = data.custom_customer_first_name || "";
 				this.customer_last_name = data.custom_customer_last_name || "";
 				this.custom_customer_id = data.custom_customer_id || "";
-				this.custom_country_name = data.custom_country_name || data.country || "Pakistan";
+				this.custom_country_name = data.custom_country_name || data.country || "Ghana";
 				this.custom_country_code = data.custom_country_code || "";
 				this.customer_id = data.name;
 				this.address_line1 = data.address_line1 || "";
 				this.city = data.city || "";
 				this.country =
-					data.country || (this.pos_profile && this.pos_profile.posa_default_country) || "Pakistan";
+					data.country || (this.pos_profile && this.pos_profile.posa_default_country) || "Ghana";
 				this.tax_id = data.tax_id;
 				this.mobile_no = data.mobile_no;
 				this.email_id = data.email_id;
@@ -1260,16 +1341,18 @@ export default {
 					this.handleGroupChange();
 				}
 			} else {
-				this.country = (this.pos_profile && this.pos_profile.posa_default_country) || "Pakistan";
+				this.country = (this.pos_profile && this.pos_profile.posa_default_country) || "Ghana";
 			}
 		});
 		this.eventBus.on("register_pos_profile", (data) => {
 			this.pos_profile = data.pos_profile;
-			this.country = (this.pos_profile && this.pos_profile.posa_default_country) || "Pakistan";
+			this.country = (this.pos_profile && this.pos_profile.posa_default_country) || "Ghana";
+			this.custom_country_name = "Ghana";
 		});
 		this.eventBus.on("payments_register_pos_profile", (data) => {
 			this.pos_profile = data.pos_profile;
-			this.country = (this.pos_profile && this.pos_profile.posa_default_country) || "Pakistan";
+			this.country = (this.pos_profile && this.pos_profile.posa_default_country) || "Ghana";
+			this.custom_country_name = "Ghana";
 		});
 		this.getCustomerGroups();
 		this.getCustomerTerritorys();
