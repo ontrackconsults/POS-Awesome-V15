@@ -100,6 +100,7 @@ after_migrate = [
 
 doc_events = {
     "Sales Invoice": {
+        "autoname": "posawesome.posawesome.api.invoice.set_naming_series_from_pos_profile",
         "validate": "posawesome.posawesome.api.invoice.validate",
         "before_submit": "posawesome.posawesome.api.invoice.before_submit",
         "before_cancel": "posawesome.posawesome.api.invoice.before_cancel",
