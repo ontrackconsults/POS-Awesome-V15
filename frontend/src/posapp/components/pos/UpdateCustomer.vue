@@ -76,10 +76,7 @@
 									v-model="mobile_no"
 									required
 									type="tel"
-									:maxlength="custom_country_name === 'Ghana' ? 10 : undefined"
-									:counter="custom_country_name === 'Ghana' ? 10 : undefined"
 									@input="limitMobileNoForGhana"
-									@paste="handleMobileNoPaste"
 								></v-text-field>
 							</v-col>
 							<v-col cols="12" v-if="!hideNonEssential">
@@ -294,7 +291,7 @@ export default {
 		customer_last_name: "",
 		custom_customer_id: "",
 		custom_country_name: "Ghana",
-		custom_country_code: "",
+		custom_country_code: "+233",
 		tax_id: "",
 		mobile_no: "",
 		mobileNoError: false,
@@ -572,16 +569,9 @@ export default {
 		},
 		custom_country_name(newVal) {
 			console.log(newVal);	
-			// Limit mobile number to 10 characters when country is Ghana
-			if (newVal === "Ghana" && this.mobile_no && this.mobile_no.length > 10) {
-				this.mobileNoError = true;
-				this.mobileNoErrorMessage = __("Mobile number must be 10 digits or less for Ghana");
-				this.mobile_no = this.mobile_no.substring(0, 10);
-				// Clear error after a short delay
-				setTimeout(() => {
-					this.mobileNoError = false;
-					this.mobileNoErrorMessage = "";
-				}, 3000);
+			// Trigger validation when country changes
+			if (newVal === "Ghana") {
+				this.limitMobileNoForGhana();
 			} else {
 				// Clear error when country is not Ghana
 				this.mobileNoError = false;
@@ -719,52 +709,17 @@ export default {
 		},
 		limitMobileNoForGhana() {
 			if (this.custom_country_name === "Ghana") {
-				// Immediately truncate if exceeds 10 characters
+				// Show error if exceeds 10 characters but allow input
 				if (this.mobile_no && this.mobile_no.length > 10) {
-					this.mobile_no = this.mobile_no.substring(0, 10);
 					this.mobileNoError = true;
 					this.mobileNoErrorMessage = __("Mobile number must be 10 digits or less for Ghana");
-					// Clear error after a short delay
-					setTimeout(() => {
-						this.mobileNoError = false;
-						this.mobileNoErrorMessage = "";
-					}, 3000);
-				} else if (this.mobile_no && this.mobile_no.length === 10) {
-					this.mobileNoError = false;
-					this.mobileNoErrorMessage = "";
-				} else if (!this.mobile_no || this.mobile_no.length < 10) {
+				} else {
 					this.mobileNoError = false;
 					this.mobileNoErrorMessage = "";
 				}
 			} else {
 				this.mobileNoError = false;
 				this.mobileNoErrorMessage = "";
-			}
-		},
-		handleMobileNoPaste(event) {
-			if (this.custom_country_name === "Ghana") {
-				// Get pasted text
-				const pastedText = (event.clipboardData || window.clipboardData).getData("text");
-				// Prevent default paste
-				event.preventDefault();
-				// Find the actual input element (Vuetify wraps it)
-				const input = event.target.querySelector("input") || event.target;
-				const start = input.selectionStart || 0;
-				const end = input.selectionEnd || 0;
-				// Calculate new value
-				const currentValue = this.mobile_no || "";
-				const newValue = currentValue.substring(0, start) + pastedText + currentValue.substring(end);
-				// Limit to 10 characters
-				this.mobile_no = newValue.substring(0, 10);
-				// Set cursor position
-				this.$nextTick(() => {
-					const newInput = event.target.querySelector("input") || event.target;
-					if (newInput && newInput.setSelectionRange) {
-						const cursorPos = Math.min(this.mobile_no.length, start + pastedText.length);
-						newInput.setSelectionRange(cursorPos, cursorPos);
-					}
-					this.limitMobileNoForGhana();
-				});
 			}
 		},
 		updateCustomerName() {
@@ -1115,6 +1070,16 @@ export default {
 				return;
 			}
 
+			// Validate mobile number length for Ghana
+			if (this.custom_country_name === "Ghana" && this.mobile_no && this.mobile_no.length > 10) {
+				frappe.utils.play_sound("error");
+				frappe.show_alert({
+					message: __("Mobile number must be 10 digits or less for Ghana"),
+					indicator: "error",
+				});
+				return;
+			}
+
 			if (!this.custom_customer_name) {
 				frappe.throw(__("Customer Name is required"));
 				return;
@@ -1319,7 +1284,7 @@ export default {
 				this.customer_last_name = data.custom_customer_last_name || "";
 				this.custom_customer_id = data.custom_customer_id || "";
 				this.custom_country_name = data.custom_country_name || data.country || "Ghana";
-				this.custom_country_code = data.custom_country_code || "";
+				this.custom_country_code = data.custom_country_code || "+233";
 				this.customer_id = data.name;
 				this.address_line1 = data.address_line1 || "";
 				this.city = data.city || "";
@@ -1348,6 +1313,7 @@ export default {
 			this.pos_profile = data.pos_profile;
 			this.country = (this.pos_profile && this.pos_profile.posa_default_country) || "Ghana";
 			this.custom_country_name = "Ghana";
+			this.custom_country_code = "+233";
 		});
 		this.eventBus.on("payments_register_pos_profile", (data) => {
 			this.pos_profile = data.pos_profile;
