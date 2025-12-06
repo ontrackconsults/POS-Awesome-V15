@@ -59,7 +59,7 @@
 								<v-text-field
 									density="compact"
 									color="primary"
-									:label="frappe._('Tax ID')"
+									:label="frappe._('Tax ID')" 
 									class="pos-themed-input"
 									hide-details
 									v-model="tax_id"

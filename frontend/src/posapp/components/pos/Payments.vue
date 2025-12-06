@@ -491,9 +491,18 @@
 					</v-col>
 					<v-col
 						cols="6"
-						v-if="invoice_doc && pos_profile.posa_allow_credit_sale && !invoice_doc.is_return"
+						v-if="
+							pos_profile.posa_allow_credit_sale &&
+							!invoice_doc.is_return
+						"
 					>
-						<v-switch v-model="is_credit_sale" :label="frappe._('Credit Sale?')"></v-switch>
+						<v-switch
+							v-model="is_credit_sale"
+							flat
+							:label="frappe._('Is Credit Sale')"
+							class="my-0 py-0"
+							:disabled="!allow_credit"
+						></v-switch>
 					</v-col>
 					<v-col cols="6" v-if="invoice_doc && invoice_doc.is_return && pos_profile.use_cashback">
 						<v-switch
@@ -800,6 +809,7 @@ export default {
 			credit_change: 0, // Change to be given as credit
 			paid_change: 0, // Change to be given as paid
 			is_credit_sale: false, // Is this a credit sale?
+			allow_credit: true, // Allow credit sale based on customer group (default: true if field doesn't exist)
 			is_write_off_change: false, // Write-off for change enabled
 			is_cashback: true, // Cashback enabled
 			is_credit_return: false, // Is this a credit return?
@@ -1094,25 +1104,43 @@ export default {
 				console.log("Cleared sales_team");
 			}
 		},
-		// Watch is_credit_sale to reset cash payments
+		// Watch is_credit_sale to reset all payments
 		is_credit_sale(newVal) {
 			if (!this.invoice_doc) {
 				return;
 			}
 			if (newVal) {
-				// If credit sale is enabled, set cash payment to 0
+				// If credit sale is enabled, set all payment amounts to 0
 				this.invoice_doc.payments.forEach((payment) => {
-					if (payment.mode_of_payment.toLowerCase() === "cash") {
-						payment.amount = 0;
-					}
+					payment.amount = 0;
+					payment.base_amount = 0;
 				});
+			}
+		},
+		// Watch customer_info to check allow_credit from customer group
+		"customer_info.customer_group"(newVal) {
+			if (newVal) {
+				frappe.db
+					.get_value("Customer Group", newVal, "custom_allow_credit")
+					.then(
+						(r) => {
+							// If field exists, use its value (1 = allow, 0 = disallow)
+							// If field doesn't exist in response, default to true
+							if (r.message && "custom_allow_credit" in r.message) {
+								this.allow_credit = r.message.custom_allow_credit === 1;
+							} else {
+								// Field doesn't exist, default to allowing credit
+								this.allow_credit = true;
+							}
+						}
+					)
+					.catch(() => {
+						// If field doesn't exist or error occurs, default to allowing credit
+						this.allow_credit = true;
+					});
 			} else {
-				// If credit sale is disabled, set cash payment to invoice total
-				this.invoice_doc.payments.forEach((payment) => {
-					if (payment.mode_of_payment.toLowerCase() === "cash") {
-						payment.amount = this.invoice_doc.rounded_total || this.invoice_doc.grand_total;
-					}
-				});
+				// No customer group, allow credit by default
+				this.allow_credit = true;
 			}
 		},
 		// Watch is_credit_return to toggle cashback payments
@@ -1138,8 +1166,12 @@ export default {
 		"invoice_doc.customer"(customer, previous) {
 			if (customer && customer !== previous) {
 				this.get_addresses();
+				// Check customer group allow_credit when customer changes
+				this.checkCustomerGroupAllowCredit(customer);
 			} else if (!customer) {
 				this.addresses = [];
+				// Reset allow_credit when no customer
+				this.allow_credit = true;
 			}
 		},
 		"invoice_doc.posa_delivery_date"(date) {
@@ -1168,6 +1200,54 @@ export default {
 		},
 	},
 	methods: {
+		// Check customer group allow_credit field
+		checkCustomerGroupAllowCredit(customer) {
+			if (!customer) {
+				this.allow_credit = true;
+				return;
+			}
+			// First try to get customer group from customer_info if available
+			if (this.customer_info && this.customer_info.customer_group) {
+				frappe.db
+					.get_value("Customer Group", this.customer_info.customer_group, "custom_allow_credit")
+					.then(
+						(r) => {
+							if (r.message && "custom_allow_credit" in r.message) {
+								this.allow_credit = r.message.custom_allow_credit === 1;
+							} else {
+								this.allow_credit = true;
+							}
+						}
+					)
+					.catch(() => {
+						this.allow_credit = true;
+					});
+			} else {
+				// If customer_info not available, fetch customer to get customer_group
+				frappe.db
+					.get_value("Customer", customer, ["customer_group"])
+					.then(
+						(r) => {
+							if (r.message && r.message.customer_group) {
+								return frappe.db.get_value("Customer Group", r.message.customer_group, "custom_allow_credit");
+							}
+							return Promise.resolve({ message: {} });
+						}
+					)
+					.then(
+						(r) => {
+							if (r.message && "custom_allow_credit" in r.message) {
+								this.allow_credit = r.message.custom_allow_credit === 1;
+							} else {
+								this.allow_credit = true;
+							}
+						}
+					)
+					.catch(() => {
+						this.allow_credit = true;
+					});
+			}
+		},
 		// Go back to invoice view and reset customer readonly
 		back_to_invoice() {
 			this.eventBus.emit("show_payment", "false");
@@ -1279,6 +1359,19 @@ export default {
 						return;
 					}
 				}
+			}
+			// Validate partial payments - check if credit sale is allowed
+			if (
+				this.pos_profile.posa_allow_partial_payment &&
+				!this.pos_profile.posa_allow_credit_sale &&
+				this.total_payments == 0
+			) {
+				this.eventBus.emit("show_message", {
+					title: `Please enter the amount paid`,
+					color: "error",
+				});
+				frappe.utils.play_sound("error");
+				return;
 			}
 			// Validate partial payments only if not credit sale and invoice total is not zero
 			if (
@@ -2202,6 +2295,11 @@ export default {
 				// Only get addresses if customer exists
 				if (invoice_doc.customer) {
 					this.get_addresses();
+					// Check customer group allow_credit when invoice is set
+					this.checkCustomerGroupAllowCredit(invoice_doc.customer);
+				} else {
+					// Reset allow_credit when no customer
+					this.allow_credit = true;
 				}
 				this.get_sales_person_names();
 			});
@@ -2244,6 +2342,36 @@ export default {
 			});
 			this.eventBus.on("set_mpesa_payment", (data) => {
 				this.set_mpesa_payment(data);
+			});
+			this.eventBus.on("set_customer_info_to_edit", (data) => {
+				this.customer_info = data;
+				if (data && data.customer_group) {
+					frappe.db
+						.get_value(
+							"Customer Group",
+							data.customer_group,
+							"custom_allow_credit"
+						)
+						.then(
+							(r) => {
+								// If field exists, use its value (1 = allow, 0 = disallow)
+								// If field doesn't exist in response, default to true
+								if (r.message && "custom_allow_credit" in r.message) {
+									this.allow_credit = r.message.custom_allow_credit === 1;
+								} else {
+									// Field doesn't exist, default to allowing credit
+									this.allow_credit = true;
+								}
+							}
+						)
+						.catch(() => {
+							// If field doesn't exist or error occurs, default to allowing credit
+							this.allow_credit = true;
+						});
+				} else {
+					// No customer group, allow credit by default
+					this.allow_credit = true;
+				}
 			});
 			// Clear any stored invoice when parent emits clear_invoice
 			this.eventBus.on("clear_invoice", () => {
