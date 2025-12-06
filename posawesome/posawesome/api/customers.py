@@ -47,17 +47,17 @@ def get_customer_group_condition(pos_profile):
 
 
 @frappe.whitelist()
-def get_customer_names(pos_profile, limit=None, offset=None, start_after=None, modified_after=None):
+def get_customer_names(pos_profile, limit=None, offset=None, start_after=None, modified_after=None, cache_version=None):
     _pos_profile = json.loads(pos_profile)
     ttl = _pos_profile.get("posa_server_cache_duration")
     if ttl:
         ttl = int(ttl) * 60
 
     @redis_cache(ttl=ttl or 1800)
-    def __get_customer_names(pos_profile, limit=None, offset=None, start_after=None, modified_after=None):
-        return _get_customer_names(pos_profile, limit, offset, start_after, modified_after)
+    def __get_customer_names(pos_profile, limit=None, offset=None, start_after=None, modified_after=None, cache_version=None):
+        return _get_customer_names(pos_profile, limit, offset, start_after, modified_after, cache_version)
 
-    def _get_customer_names(pos_profile, limit=None, offset=None, start_after=None, modified_after=None):
+    def _get_customer_names(pos_profile, limit=None, offset=None, start_after=None, modified_after=None, cache_version=None):
         pos_profile = json.loads(pos_profile)
         filters = {"disabled": 0}
 
@@ -85,6 +85,7 @@ def get_customer_names(pos_profile, limit=None, offset=None, start_after=None, m
                 "tax_id",
                 "customer_name",
                 "primary_address",
+                "custom_customer_id",
             ],
             order_by="name",
             limit_start=None if start_after else offset,
@@ -92,10 +93,12 @@ def get_customer_names(pos_profile, limit=None, offset=None, start_after=None, m
         )
         return customers
 
-    if _pos_profile.get("posa_use_server_cache") and not (limit or offset or start_after or modified_after):
-        return __get_customer_names(pos_profile, limit, offset, start_after, modified_after)
+    # Always bypass cache if cache_version is provided or if pagination params are provided
+    # This ensures fresh data when cache_version changes (e.g., after adding new fields)
+    if _pos_profile.get("posa_use_server_cache") and not (limit or offset or start_after or modified_after or cache_version):
+        return __get_customer_names(pos_profile, limit, offset, start_after, modified_after, cache_version)
     else:
-        return _get_customer_names(pos_profile, limit, offset, start_after, modified_after)
+        return _get_customer_names(pos_profile, limit, offset, start_after, modified_after, cache_version)
 
 
 @frappe.whitelist()
@@ -128,6 +131,7 @@ def get_customer_info(customer):
     res["posa_discount"] = customer.posa_discount
     res["name"] = customer.name
     res["customer_name"] = customer.customer_name
+    res["custom_customer_id"] = customer.custom_customer_id
     res["customer_group_price_list"] = frappe.get_value(
         "Customer Group", customer.customer_group, "default_price_list"
     )

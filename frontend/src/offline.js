@@ -1061,6 +1061,7 @@ export function setCustomerStorage(customers) {
 			email_id: c.email_id,
 			primary_address: c.primary_address,
 			tax_id: c.tax_id,
+			custom_customer_id: c.custom_customer_id,
 		}));
 	} catch (e) {
 		console.error("Failed to trim customers for storage", e);

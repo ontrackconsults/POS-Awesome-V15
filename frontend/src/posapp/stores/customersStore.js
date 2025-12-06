@@ -161,6 +161,7 @@ export const useCustomersStore = defineStore("customers", () => {
 					customer.mobile_no,
 					customer.email_id,
 					customer.tax_id,
+					customer.custom_customer_id,
 				]
 					.filter((value) => value !== null && value !== undefined)
 					.map((value) => String(value).toLowerCase());
@@ -176,10 +177,16 @@ export const useCustomersStore = defineStore("customers", () => {
 		const offset = page.value * PAGE_SIZE;
 		const results = await collection.offset(offset).limit(PAGE_SIZE).toArray();
 
+		// Ensure custom_customer_id is defined for all results (handle old cache records)
+		const normalizedResults = results.map((customer) => ({
+			...customer,
+			custom_customer_id: customer.custom_customer_id ?? null,
+		}));
+
 		if (append) {
-			customers.value = [...customers.value, ...results];
+			customers.value = [...customers.value, ...normalizedResults];
 		} else {
-			customers.value = results;
+			customers.value = normalizedResults;
 		}
 
 		hasMore.value = results.length === PAGE_SIZE;
@@ -236,6 +243,7 @@ export const useCustomersStore = defineStore("customers", () => {
 					modified_after: modifiedAfter,
 					limit,
 					start_after: startAfter,
+					cache_version: "v2", // Force cache bypass to ensure custom_customer_id is included
 				},
 				callback: (r) => resolve(r.message || []),
 				error: (err) => {
@@ -356,10 +364,29 @@ export const useCustomersStore = defineStore("customers", () => {
 		}
 		const localCount = await getCustomerStorageCount();
 		if (localCount > 0) {
-			customersLoaded.value = true;
-			await searchCustomers(searchTerm.value);
-			await verifyServerCustomerCount();
-			return;
+			// Check if existing records are missing custom_customer_id (migration check)
+			try {
+				await ensureDatabase();
+				const sample = await db.table("customers").limit(1).toArray();
+				if (sample.length > 0 && !("custom_customer_id" in sample[0])) {
+					// Old cache format detected - clear and refresh
+					console.log("Detected old customer cache format, refreshing...");
+					await clearCustomerStorage();
+					setCustomersLastSync(null);
+					// Continue to full refresh below
+				} else {
+					customersLoaded.value = true;
+					await searchCustomers(searchTerm.value);
+					await verifyServerCustomerCount();
+					return;
+				}
+			} catch (err) {
+				console.error("Error checking customer cache format:", err);
+				customersLoaded.value = true;
+				await searchCustomers(searchTerm.value);
+				await verifyServerCustomerCount();
+				return;
+			}
 		}
 
 		const syncSince = getCustomersLastSync();

@@ -65,7 +65,7 @@
 			<template #item="{ props, item }">
 				<v-list-item v-bind="props">
 					<v-list-item-subtitle v-if="item.raw.customer_name !== item.raw.name">
-						<div v-html="`ID: ${item.raw.name}`"></div>
+						<div v-html="`ID: ${item.raw.custom_customer_id}`"></div>
 					</v-list-item-subtitle>
 					<v-list-item-subtitle v-if="item.raw.tax_id">
 						<div v-html="`TAX ID: ${item.raw.tax_id}`"></div>
@@ -75,7 +75,7 @@
 					</v-list-item-subtitle>
 					<v-list-item-subtitle v-if="item.raw.mobile_no">
 						<div v-html="`Mobile No: ${item.raw.mobile_no}`"></div>
-					</v-list-item-subtitle>
+					</v-list-item-subtitle>	
 					<v-list-item-subtitle v-if="item.raw.primary_address">
 						<div v-html="`Primary Address: ${item.raw.primary_address}`"></div>
 					</v-list-item-subtitle>
