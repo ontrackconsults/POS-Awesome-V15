@@ -621,7 +621,7 @@ def get_customer_names(pos_profile, query=None):
     customers = frappe.db.sql(
         """
         SELECT name, mobile_no, custom_search_mobile_no, email_id, tax_id, customer_name, 
-               primary_address, customer_group, custom_customer_id, custom_customer_name,
+               primary_address, customer_group, custom_customer_id, custom_customer_name,custom_customer_id,
                territory, customer_type
         FROM `tabCustomer`
         WHERE {0}
@@ -636,5 +636,4 @@ def get_customer_names(pos_profile, query=None):
             customers.append(default_customer)
         except frappe.DoesNotExistError:
             pass
-        
     return customers
