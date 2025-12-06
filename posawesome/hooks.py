@@ -198,6 +198,7 @@ fixtures = [
                     "POS Profile-posa_allow_submissions_in_background_job",
                     "POS Profile-posa_allow_partial_payment",
                     "POS Profile-posa_allow_credit_sale",
+                    "Customer Group-custom_allow_credit",
                     "POS Profile-posa_pos_awesome_advance_settings",
                     "Batch-posa_batch_price",
                     "POS Profile-posa_max_discount_allowed",
