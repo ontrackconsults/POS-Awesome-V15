@@ -709,10 +709,11 @@ export default {
 		},
 		limitMobileNoForGhana() {
 			if (this.custom_country_name === "Ghana") {
-				// Show error if exceeds 10 characters but allow input
-				if (this.mobile_no && this.mobile_no.length > 10) {
+				const mobileNo = String(this.mobile_no || "").trim();
+				// Show error if mobile number is not exactly 10 digits
+				if (mobileNo.length > 0 && mobileNo.length !== 10) {
 					this.mobileNoError = true;
-					this.mobileNoErrorMessage = __("Mobile number must be 10 digits or less for Ghana");
+					this.mobileNoErrorMessage = __("Mobile number must be exactly 10 digits for Ghana");
 				} else {
 					this.mobileNoError = false;
 					this.mobileNoErrorMessage = "";
@@ -1070,14 +1071,17 @@ export default {
 				return;
 			}
 
-			// Validate mobile number length for Ghana
-			if (this.custom_country_name === "Ghana" && this.mobile_no && this.mobile_no.length > 10) {
-				frappe.utils.play_sound("error");
-				frappe.show_alert({
-					message: __("Mobile number must be 10 digits or less for Ghana"),
-					indicator: "error",
-				});
-				return;
+			// Validate mobile number length for Ghana - must be exactly 10 digits
+			if (this.custom_country_name === "Ghana" && this.mobile_no) {
+				const mobileNo = String(this.mobile_no).trim();
+				if (mobileNo.length !== 10) {
+					frappe.utils.play_sound("error");
+					frappe.show_alert({
+						message: __("Mobile number must be exactly 10 digits for Ghana"),
+						indicator: "error",
+					});
+					return;
+				}
 			}
 
 			if (!this.custom_customer_name) {
