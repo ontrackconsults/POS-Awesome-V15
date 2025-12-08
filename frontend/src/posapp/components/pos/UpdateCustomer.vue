@@ -986,9 +986,28 @@ export default {
 			this.custom_country_code = countryCodeMap[this.custom_country_name] || "";
 		},
 		handleGroupChange() {
-			// Customer ID requirement is not currently implemented
-			// This functionality can be added later if needed
-			this.reqd_customer_id = false;
+			if (!this.group) {
+				this.reqd_customer_id = false;
+				return;
+			}
+			// Check if customer group has custom_is_insurance field checked
+			frappe.db
+				.get_value("Customer Group", this.group, "custom_is_insurance")
+				.then(
+					(r) => {
+						// If field exists and is checked (1), make customer ID required
+						if (r.message && "custom_is_insurance" in r.message) {
+							this.reqd_customer_id = r.message.custom_is_insurance === 1;
+						} else {
+							// Field doesn't exist or is not checked, customer ID not required
+							this.reqd_customer_id = false;
+						}
+					}
+				)
+				.catch(() => {
+					// If error occurs or field doesn't exist, customer ID not required
+					this.reqd_customer_id = false;
+				});
 		},
 		getCustomerGroups() {
 			if (this.groups.length > 0) return;
@@ -1090,7 +1109,11 @@ export default {
 			}
 
 			if (this.reqd_customer_id && !this.custom_customer_id) {
-				frappe.throw(__("Customer ID is required for this customer group"));
+				frappe.utils.play_sound("error");
+				frappe.show_alert({
+					message: __("Customer ID is required for this customer group"),
+					indicator: "error",
+				});
 				return;
 			}
 
