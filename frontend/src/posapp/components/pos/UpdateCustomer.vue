@@ -731,8 +731,8 @@ export default {
 			// custom_customer_name is just first + last name
 			this.custom_customer_name = `${first} ${last}`.trim();
 
-			// customer_name is first + last + mobile_no (for doctype name)
-			this.customer_name = `${first} ${last} ${mobile}`.trim();
+			// customer_name is first + last  (for doctype name)
+			this.customer_name = `${first} ${last}`.trim();
 		},
 		updateCountryCode() {
 			// Map country names to country codes
@@ -1219,9 +1219,11 @@ export default {
 					name: args.name,
 					customer_name: args.customer_name,
 					mobile_no: args.mobile_no,
+					custom_search_mobile_no: args.mobile_no,
 					email_id: args.email_id,
 					tax_id: args.tax_id,
 					primary_address: args.address_line1,
+					custom_customer_id: args.custom_customer_id,
 				});
 				vm.close_dialog();
 				return;
@@ -1242,13 +1244,16 @@ export default {
 						});
 						args.name = r.message.name;
 						frappe.utils.play_sound("submit");
+						const customerDoc = r.message;
 						await customersStore.addOrUpdateCustomer({
-							name: args.name,
-							customer_name: args.customer_name,
-							mobile_no: args.mobile_no,
-							email_id: args.email_id,
-							tax_id: args.tax_id,
+							name: customerDoc.name,
+							customer_name: customerDoc.customer_name || args.customer_name,
+							mobile_no: customerDoc.mobile_no || args.mobile_no,
+							custom_search_mobile_no: customerDoc.custom_search_mobile_no || args.mobile_no,
+							email_id: customerDoc.email_id || args.email_id,
+							tax_id: customerDoc.tax_id || args.tax_id,
 							primary_address: args.address_line1,
+							custom_customer_id: customerDoc.custom_customer_id || args.custom_customer_id,
 						});
 						vm.close_dialog();
 					} else {
