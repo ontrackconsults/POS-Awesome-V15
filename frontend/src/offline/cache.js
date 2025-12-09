@@ -199,6 +199,7 @@ export async function setCustomerStorage(customers) {
 			name: c.name,
 			customer_name: c.customer_name,
 			mobile_no: c.mobile_no,
+			custom_search_mobile_no: c.custom_search_mobile_no,
 			email_id: c.email_id,
 			primary_address: c.primary_address,
 			tax_id: c.tax_id,

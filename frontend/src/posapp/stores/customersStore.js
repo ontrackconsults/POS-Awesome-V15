@@ -137,6 +137,44 @@ export const useCustomersStore = defineStore("customers", () => {
 
 	function setCustomerInfo(info) {
 		customerInfo.value = info || {};
+		// Update the customer in the customers array if it exists
+		if (info && info.name) {
+			const existingIndex = customers.value.findIndex((c) => c.name === info.name);
+			if (existingIndex !== -1) {
+				const updated = [...customers.value];
+				// Update fields from customer info, preserving existing values if info doesn't have them
+				updated[existingIndex] = {
+					...updated[existingIndex],
+					custom_customer_id:
+						info.custom_customer_id !== undefined
+							? info.custom_customer_id
+							: updated[existingIndex].custom_customer_id,
+					custom_search_mobile_no:
+						info.custom_search_mobile_no !== undefined
+							? info.custom_search_mobile_no
+							: updated[existingIndex].custom_search_mobile_no,
+				};
+				customers.value = updated;
+				// Also update in storage
+				setCustomerStorage([updated[existingIndex]]);
+			} else {
+				// Customer not in list yet, add it if we have enough info
+				if (info.customer_name) {
+					const newCustomer = {
+						name: info.name,
+						customer_name: info.customer_name,
+						mobile_no: info.mobile_no || null,
+						custom_search_mobile_no: info.custom_search_mobile_no || null,
+						email_id: info.email_id || null,
+						tax_id: info.tax_id || null,
+						primary_address: null,
+						custom_customer_id: info.custom_customer_id || null,
+					};
+					customers.value = [...customers.value, newCustomer];
+					setCustomerStorage([newCustomer]);
+				}
+			}
+		}
 	}
 
 	function requestCustomerRefresh() {
@@ -159,6 +197,7 @@ export const useCustomersStore = defineStore("customers", () => {
 					customer.customer_name,
 					customer.name,
 					customer.mobile_no,
+					customer.custom_search_mobile_no,
 					customer.email_id,
 					customer.tax_id,
 					customer.custom_customer_id,
@@ -177,10 +216,23 @@ export const useCustomersStore = defineStore("customers", () => {
 		const offset = page.value * PAGE_SIZE;
 		const results = await collection.offset(offset).limit(PAGE_SIZE).toArray();
 
-		// Ensure custom_customer_id is defined for all results (handle old cache records)
+		// Debug: Log sample from cache
+		if (results.length > 0 && page.value === 0) {
+			const sampleFromCache = results[0];
+			console.log("Sample customer from cache:", {
+				name: sampleFromCache.name,
+				has_custom_customer_id: "custom_customer_id" in sampleFromCache,
+				custom_customer_id: sampleFromCache.custom_customer_id,
+				has_custom_search_mobile_no: "custom_search_mobile_no" in sampleFromCache,
+				custom_search_mobile_no: sampleFromCache.custom_search_mobile_no,
+			});
+		}
+
+		// Ensure custom_customer_id and custom_search_mobile_no are defined for all results (handle old cache records)
 		const normalizedResults = results.map((customer) => ({
 			...customer,
 			custom_customer_id: customer.custom_customer_id ?? null,
+			custom_search_mobile_no: customer.custom_search_mobile_no ?? null,
 		}));
 
 		if (append) {
@@ -243,9 +295,24 @@ export const useCustomersStore = defineStore("customers", () => {
 					modified_after: modifiedAfter,
 					limit,
 					start_after: startAfter,
-					cache_version: "v2", // Force cache bypass to ensure custom_customer_id is included
+					cache_version: "v4", // Force cache bypass to ensure custom_customer_id and custom_search_mobile_no are included
 				},
-				callback: (r) => resolve(r.message || []),
+				callback: (r) => {
+					const customers = r.message || [];
+					// Debug: Log first customer to verify fields are present
+					if (customers.length > 0) {
+						const firstCustomer = customers[0];
+						console.log("Sample customer from API:", {
+							name: firstCustomer.name,
+							customer_name: firstCustomer.customer_name,
+							has_custom_customer_id: "custom_customer_id" in firstCustomer,
+							custom_customer_id: firstCustomer.custom_customer_id,
+							has_custom_search_mobile_no: "custom_search_mobile_no" in firstCustomer,
+							custom_search_mobile_no: firstCustomer.custom_search_mobile_no,
+						});
+					}
+					resolve(customers);
+				},
 				error: (err) => {
 					console.error("Failed to fetch customers", err);
 					reject(err);
@@ -364,13 +431,22 @@ export const useCustomersStore = defineStore("customers", () => {
 		}
 		const localCount = await getCustomerStorageCount();
 		if (localCount > 0) {
-			// Check if existing records are missing custom_customer_id (migration check)
+			// Check if existing records are missing custom_customer_id or custom_search_mobile_no (migration check)
 			try {
 				await ensureDatabase();
-				const sample = await db.table("customers").limit(1).toArray();
-				if (sample.length > 0 && !("custom_customer_id" in sample[0])) {
+				const sample = await db.table("customers").limit(10).toArray();
+				const needsRefresh = sample.some(
+					(customer) =>
+						!("custom_customer_id" in customer) ||
+						!("custom_search_mobile_no" in customer) ||
+						customer.custom_customer_id === undefined ||
+						customer.custom_search_mobile_no === undefined,
+				);
+				if (needsRefresh) {
 					// Old cache format detected - clear and refresh
-					console.log("Detected old customer cache format, refreshing...");
+					console.log(
+						"Detected old customer cache format (missing fields), clearing cache and refreshing...",
+					);
 					await clearCustomerStorage();
 					setCustomersLastSync(null);
 					// Continue to full refresh below
@@ -382,10 +458,11 @@ export const useCustomersStore = defineStore("customers", () => {
 				}
 			} catch (err) {
 				console.error("Error checking customer cache format:", err);
-				customersLoaded.value = true;
-				await searchCustomers(searchTerm.value);
-				await verifyServerCustomerCount();
-				return;
+				// On error, clear cache to be safe
+				console.log("Error during cache check, clearing cache and refreshing...");
+				await clearCustomerStorage();
+				setCustomersLastSync(null);
+				// Continue to full refresh below
 			}
 		}
 
@@ -406,6 +483,17 @@ export const useCustomersStore = defineStore("customers", () => {
 
 			const rows = await fetchCustomerPage(null, syncSince, PAGE_SIZE);
 			if (rows.length) {
+				// Debug: Verify fields before storing
+				const sampleRow = rows[0];
+				if (sampleRow) {
+					console.log("Storing customer data - sample:", {
+						name: sampleRow.name,
+						has_custom_customer_id: "custom_customer_id" in sampleRow,
+						custom_customer_id: sampleRow.custom_customer_id,
+						has_custom_search_mobile_no: "custom_search_mobile_no" in sampleRow,
+						custom_search_mobile_no: sampleRow.custom_search_mobile_no,
+					});
+				}
 				await setCustomerStorage(rows);
 			}
 			loadedCustomerCount.value = rows.length;

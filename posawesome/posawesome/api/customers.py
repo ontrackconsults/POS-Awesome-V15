@@ -81,6 +81,7 @@ def get_customer_names(pos_profile, limit=None, offset=None, start_after=None, m
             fields=[
                 "name",
                 "mobile_no",
+                "custom_search_mobile_no",
                 "email_id",
                 "tax_id",
                 "customer_name",
@@ -132,6 +133,7 @@ def get_customer_info(customer):
     res["name"] = customer.name
     res["customer_name"] = customer.customer_name
     res["custom_customer_id"] = customer.custom_customer_id
+    res["custom_search_mobile_no"] = customer.custom_search_mobile_no
     res["customer_group_price_list"] = frappe.get_value(
         "Customer Group", customer.customer_group, "default_price_list"
     )
