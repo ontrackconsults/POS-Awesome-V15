@@ -319,7 +319,24 @@ export default {
 			eventBus?.emit("open_update_customer", null);
 		};
 
-		const edit_customer = () => {
+		const edit_customer = async () => {
+			const current = selectedCustomer.value;
+			// When a customer is selected, fetch full info (including custom_customer_first_name) so the form shows correct values
+			if (current) {
+				try {
+					const r = await frappe.call({
+						method: "posawesome.posawesome.api.customers.get_customer_info",
+						args: { customer: current },
+					});
+					if (r?.message) {
+						customersStore.setCustomerInfo(r.message);
+						eventBus?.emit("open_update_customer", r.message);
+						return;
+					}
+				} catch (err) {
+					console.error("Failed to fetch customer info for edit", err);
+				}
+			}
 			eventBus?.emit("open_update_customer", customerInfo.value || {});
 		};
 

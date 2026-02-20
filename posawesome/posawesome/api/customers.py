@@ -87,6 +87,9 @@ def get_customer_names(pos_profile, limit=None, offset=None, start_after=None, m
                 "customer_name",
                 "primary_address",
                 "custom_customer_id",
+                "custom_customer_first_name",
+                "custom_customer_last_name",
+                "custom_customer_name",
             ],
             order_by="name",
             limit_start=None if start_after else offset,
@@ -133,7 +136,13 @@ def get_customer_info(customer):
     res["name"] = customer.name
     res["customer_name"] = customer.customer_name
     res["custom_customer_id"] = customer.custom_customer_id
+    res["custom_customer_first_name"] = getattr(customer, "custom_customer_first_name", None) or ""
+    res["custom_customer_last_name"] = getattr(customer, "custom_customer_last_name", None) or ""
+    res["custom_customer_name"] = getattr(customer, "custom_customer_name", None) or customer.customer_name or ""
     res["custom_search_mobile_no"] = customer.custom_search_mobile_no
+    res["custom_country_name"] = getattr(customer, "custom_country_name", None) or ""
+    res["custom_country_code"] = getattr(customer, "custom_country_code", None) or ""
+    res["referral_code"] = getattr(customer, "referral_code", None) or ""
     res["customer_group_price_list"] = frappe.get_value(
         "Customer Group", customer.customer_group, "default_price_list"
     )
@@ -184,140 +193,7 @@ def get_customer_info(customer):
     return res
 
 
-@frappe.whitelist()
-def create_customer(
-    customer_name,
-    company,
-    pos_profile_doc,
-    customer_id=None,
-    tax_id=None,
-    mobile_no=None,
-    email_id=None,
-    referral_code=None,
-    birthday=None,
-    customer_group=None,
-    territory=None,
-    customer_type=None,
-    gender=None,
-    method="create",
-    address_line1=None,
-    city=None,
-    country=None,
-):
-    pos_profile = json.loads(pos_profile_doc)
 
-    # Format birthday to MySQL compatible format (YYYY-MM-DD) if provided
-    formatted_birthday = None
-    if birthday:
-        try:
-            # Try to parse date in DD-MM-YYYY format
-            if "-" in birthday:
-                date_parts = birthday.split("-")
-                if len(date_parts) == 3:
-                    day, month, year = date_parts
-                    formatted_birthday = f"{year}-{month.zfill(2)}-{day.zfill(2)}"
-            # If format is already YYYY-MM-DD, use as is
-            elif len(birthday) == 10 and birthday[4] == "-" and birthday[7] == "-":
-                formatted_birthday = birthday
-        except Exception:
-            frappe.log_error(f"Error formatting birthday: {birthday}", "POS Awesome")
-
-    if method == "create":
-        is_exist = frappe.db.exists("Customer", {"customer_name": customer_name})
-        if pos_profile.get("posa_allow_duplicate_customer_names") or not is_exist:
-            customer = frappe.get_doc(
-                {
-                    "doctype": "Customer",
-                    "customer_name": customer_name,
-                    "posa_referral_company": company,
-                    "tax_id": tax_id,
-                    "mobile_no": mobile_no,
-                    "email_id": email_id,
-                    "posa_referral_code": referral_code,
-                    "posa_birthday": formatted_birthday,
-                    "customer_type": customer_type,
-                    "gender": gender,
-                }
-            )
-            if customer_group:
-                customer.customer_group = customer_group
-            else:
-                customer.customer_group = "All Customer Groups"
-            if territory:
-                customer.territory = territory
-            else:
-                customer.territory = "All Territories"
-
-            customer.save()
-
-            if address_line1 or city:
-                args = {
-                    "name": f"{customer.customer_name} - Shipping",
-                    "doctype": "Customer",
-                    "customer": customer.name,
-                    "address_line1": address_line1 or "",
-                    "address_line2": "",
-                    "city": city or "",
-                    "state": "",
-                    "pincode": "",
-                    "country": country or "",
-                }
-                make_address(json.dumps(args))
-
-            return customer
-        else:
-            frappe.throw(_("Customer already exists"))
-
-    elif method == "update":
-        customer_doc = frappe.get_doc("Customer", customer_id)
-        customer_doc.customer_name = customer_name
-        customer_doc.tax_id = tax_id
-        customer_doc.mobile_no = mobile_no
-        customer_doc.email_id = email_id
-        customer_doc.posa_referral_code = referral_code
-        customer_doc.posa_birthday = formatted_birthday
-        customer_doc.customer_type = customer_type
-        customer_doc.gender = gender
-        customer_doc.save()
-
-        # ensure contact details are synced correctly
-        if mobile_no:
-            set_customer_info(customer_doc.name, "mobile_no", mobile_no)
-        if email_id:
-            set_customer_info(customer_doc.name, "email_id", email_id)
-
-        existing_address_name = frappe.db.get_value(
-            "Dynamic Link",
-            {
-                "link_doctype": "Customer",
-                "link_name": customer_id,
-                "parenttype": "Address",
-            },
-            "parent",
-        )
-
-        if existing_address_name:
-            address_doc = frappe.get_doc("Address", existing_address_name)
-            address_doc.address_line1 = address_line1 or ""
-            address_doc.city = city or ""
-            address_doc.country = country or ""
-            address_doc.save()
-        else:
-            if address_line1 or city:
-                args = {
-                    "name": f"{customer_doc.customer_name} - Shipping",
-                    "doctype": "Customer",
-                    "customer": customer_doc.name,
-                    "address_line1": address_line1 or "",
-                    "address_line2": "",
-                    "city": city or "",
-                    "state": "",
-                    "pincode": "",
-                    "country": country or "",
-                }
-                make_address(json.dumps(args))
-
-        return customer_doc
 
 
 @frappe.whitelist()
@@ -407,6 +283,24 @@ def get_sales_person_names():
     return fetch_sales_person_names()
 
 
+def _set_customer_custom_name_fields(
+    customer_name,
+    custom_customer_first_name=None,
+    custom_customer_last_name=None,
+    custom_customer_name=None,
+):
+    """Write custom name fields directly to DB so they persist regardless of doc meta/cache."""
+    updates = {}
+    if custom_customer_first_name is not None:
+        updates["custom_customer_first_name"] = custom_customer_first_name or ""
+    if custom_customer_last_name is not None:
+        updates["custom_customer_last_name"] = custom_customer_last_name or ""
+    if custom_customer_name is not None:
+        updates["custom_customer_name"] = custom_customer_name or ""
+    if updates:
+        frappe.db.set_value("Customer", customer_name, updates, update_modified=False)
+
+
 @frappe.whitelist()
 def create_customer(
     customer_id,
@@ -434,6 +328,30 @@ def create_customer(
     **kwargs
 ):
     """Create or update customer with custom fields"""
+    # Read custom_* from request: form_dict (flat) or nested args (JSON), so they are never lost
+    form = dict(getattr(frappe.local, "form_dict", None) or {})
+    request_args = kwargs.pop("args", None)
+    if request_args is not None:
+        if isinstance(request_args, str):
+            try:
+                request_args = json.loads(request_args)
+            except (TypeError, ValueError):
+                request_args = None
+        if isinstance(request_args, dict):
+            form.update(request_args)
+    if "custom_customer_first_name" in form:
+        custom_customer_first_name = form["custom_customer_first_name"] or ""
+    if "custom_customer_last_name" in form:
+        custom_customer_last_name = form["custom_customer_last_name"] or ""
+    if "custom_customer_name" in form:
+        custom_customer_name = form.get("custom_customer_name") or custom_customer_name
+    if "custom_customer_id" in form:
+        custom_customer_id = form.get("custom_customer_id") or custom_customer_id
+    if "custom_country_name" in form:
+        custom_country_name = form.get("custom_country_name") or custom_country_name
+    if "custom_country_code" in form:
+        custom_country_code = form.get("custom_country_code") or custom_country_code
+
     pos_profile = json.loads(pos_profile_doc) if isinstance(pos_profile_doc, str) else pos_profile_doc
     
     if method == "create":
@@ -469,8 +387,21 @@ def create_customer(
                 customer.territory = territory
             else:
                 customer.territory = "All Territories"
-                
+
+            # Ensure custom name fields are set (in case they were not applied from get_doc dict)
+            customer.custom_customer_first_name = custom_customer_first_name or ""
+            customer.custom_customer_last_name = custom_customer_last_name or ""
+            customer.custom_customer_name = custom_customer_name or ""
+
             customer.save()
+
+            # Force-write custom name fields to DB (bypasses doc layer in case valid_columns/meta omit them)
+            _set_customer_custom_name_fields(
+                customer.name,
+                custom_customer_first_name=custom_customer_first_name,
+                custom_customer_last_name=custom_customer_last_name,
+                custom_customer_name=custom_customer_name,
+            )
             return customer
         else:
             frappe.throw(_("Customer already exists"))
@@ -495,4 +426,10 @@ def create_customer(
         customer_doc.customer_group = customer_group
         customer_doc.territory = territory
         customer_doc.save()
+        _set_customer_custom_name_fields(
+            customer_doc.name,
+            custom_customer_first_name=custom_customer_first_name,
+            custom_customer_last_name=custom_customer_last_name,
+            custom_customer_name=custom_customer_name,
+        )
         return customer_doc

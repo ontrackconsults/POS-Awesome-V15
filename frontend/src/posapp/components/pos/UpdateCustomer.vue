@@ -1179,13 +1179,15 @@ export default {
 				}
 			}
 
-			// Create args object to use in callback
+			// Create args object to use in callback (use ?? "" so keys are always sent in JSON)
 			const args = {
 				customer_id: this.customer_id,
 				customer_name: this.customer_name,
-				custom_customer_name: this.custom_customer_name,
-				customer_first_name: this.customer_first_name,
-				customer_last_name: this.customer_last_name,
+				custom_customer_name: this.custom_customer_name ?? "",
+				custom_customer_first_name: this.customer_first_name ?? "",
+				custom_customer_last_name: this.customer_last_name ?? "",
+				customer_first_name: this.customer_first_name ?? "",
+				customer_last_name: this.customer_last_name ?? "",
 				custom_customer_id: this.custom_customer_id,
 				custom_country_name: this.custom_country_name,
 				custom_country_code: this.custom_country_code,
@@ -1228,7 +1230,7 @@ export default {
 				vm.close_dialog();
 				return;
 			}
-
+		
 			frappe.call({
 				method: "posawesome.posawesome.api.customers.create_customer",
 				args: apiArgs,
@@ -1308,7 +1310,7 @@ export default {
 		}
 		this.eventBus.on("open_update_customer", (data) => {
 			this.customerDialog = true;
-
+			
 			if (data) {
 				this.customer_name = data.customer_name;
 				this.custom_customer_name = data.custom_customer_name || data.customer_name;
