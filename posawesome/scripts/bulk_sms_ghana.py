@@ -4,11 +4,15 @@ import frappe
 
 def send_sms(api_key, phone, message, sender_id, context=None, url='http://clientlogin.bulksmsgh.com/smsapi'):
     """Send SMS via Bulk Ghana SMS API"""
+    sms_gateway_settings = frappe.get_doc("SMS Gateway Settings")
+    message_body = frappe.render_template(
+        sms_gateway_settings.get(message) , context.as_dict()
+    )
     try:
         data = {
             'key': api_key,
             'to': phone,
-            'msg': message,
+            'msg': message_body,
             'sender_id': sender_id
         }
         
