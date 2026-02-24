@@ -6,6 +6,10 @@ import json
 import frappe
 from erpnext.accounts.doctype.sales_invoice.sales_invoice import get_bank_cash_account
 from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
+
+
+from frappe.utils.print_format import validate_print_permission
+from frappe.translate import print_language
 from erpnext.setup.utils import get_exchange_rate
 from erpnext.stock.doctype.batch.batch import (
     get_batch_no,
@@ -461,6 +465,53 @@ def update_invoice(data):
     response["exchange_rate_date"] = exchange_rate_date
     return response
 
+def download_pdf(
+    doctype,
+    name,
+    format=None,
+    doc=None,
+    no_letterhead=0,
+    language=None,
+    letterhead=None,
+):
+    doc = doc or frappe.get_doc(doctype, name)
+    validate_print_permission(doc)
+
+    with print_language(language):
+        pdf_file = frappe.get_print(
+            doctype,
+            name,
+            format,
+            doc=doc,
+            as_pdf=True,
+            letterhead=letterhead,
+            no_letterhead=no_letterhead,
+        )
+
+    # Correct file path in Frappe
+    file_name = f"{name.replace(' ', '-').replace('/', '-')}.pdf"
+    file_path = frappe.get_site_path(
+        "public", "files", file_name
+    )  # Saves to public/files/
+
+    # Save PDF to the correct location
+    with open(file_path, "wb") as f:
+        f.write(pdf_file)
+
+    # Create a new file record in Frappe
+    file_doc = frappe.get_doc(
+        {
+            "doctype": "File",
+            "file_url": f"/files/{file_name}",
+            "attached_to_doctype": doctype,
+            "attached_to_name": name,
+            "is_private": 0,
+        }
+    )
+    file_doc.insert(ignore_permissions=True)
+    frappe.db.commit()
+
+    return {"message": file_doc.file_url}  # Return the file URL
 
 @frappe.whitelist()
 def submit_invoice(invoice, data):
@@ -474,12 +525,19 @@ def submit_invoice(invoice, data):
         doctype = "POS Invoice"
 
     invoice_name = invoice.get("name")
+    pdf_link = download_pdf("Sales Invoice", invoice.get("name"), format= "POS SI Receipt VAT")
+    invoice.update({"custom_pdf_link" : pdf_link["message"]})
+    invoice_doc = frappe.get_doc("Sales Invoice", invoice.get("name"))
+    
+    
     if not invoice_name or not frappe.db.exists(doctype, invoice_name):
         created = update_invoice(json.dumps(invoice))
         invoice_name = created.get("name")
         invoice_doc = frappe.get_doc(doctype, invoice_name)
+    
     else:
         invoice_doc = frappe.get_doc(doctype, invoice_name)
+     
         invoice_doc.update(invoice)
 
     # Ensure item name overrides are respected on submit
