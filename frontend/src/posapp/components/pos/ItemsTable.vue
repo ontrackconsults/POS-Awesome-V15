@@ -176,7 +176,7 @@
 			<template v-slot:item.custom_hair_stylist_1="{ item }">
 				<v-autocomplete
 					v-if="
-						item.is_stock_item == 0 ||
+						item.item_group == 'Services' ||
 						pos_profile.custom_show_service_staff_for_products
 					"
 					v-model="item.custom_hair_stylist_1"
@@ -213,7 +213,7 @@
 			<template v-slot:item.custom_hair_stylist_2="{ item }">
 				<v-autocomplete
 					v-if="
-						item.is_stock_item == 0 ||
+						item.item_group == 'Services' ||
 						pos_profile.custom_show_service_staff_for_products
 					"
 					v-model="item.custom_hair_stylist_2"
@@ -250,7 +250,7 @@
 			<template v-slot:item.custom_hair_stylist_3="{ item }">
 				<v-autocomplete
 					v-if="
-						item.is_stock_item == 0 ||
+						item.item_group == 'Services' ||
 						pos_profile.custom_show_service_staff_for_products
 					"
 					v-model="item.custom_hair_stylist_3"
@@ -706,10 +706,12 @@
 							</div>
 
 							<!-- Service Staff Section -->
+						
 							<div
 								class="form-section"
+							
 								v-if="
-									item.is_stock_item == 0 ||
+									item.item_group == 'Services' ||
 									pos_profile.custom_show_service_staff_for_products
 								"
 							>
