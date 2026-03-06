@@ -857,6 +857,10 @@ export default {
 				posa_is_offer: item.posa_is_offer,
 				posa_is_replace: item.posa_is_replace,
 				is_free_item: item.is_free_item,
+				// Custom service staff fields (Sales Invoice Item / POS Invoice Item)
+				custom_hair_stylist_1: item.custom_hair_stylist_1,
+				custom_hair_stylist_2: item.custom_hair_stylist_2,
+				custom_hair_stylist_3: item.custom_hair_stylist_3,
 				qty: flt(item.qty),
 				uom: item.uom,
 				conversion_factor: item.conversion_factor,
@@ -944,6 +948,10 @@ export default {
 				posa_is_offer: item.posa_is_offer,
 				posa_is_replace: item.posa_is_replace,
 				is_free_item: item.is_free_item,
+				// Custom service staff fields
+				custom_hair_stylist_1: item.custom_hair_stylist_1,
+				custom_hair_stylist_2: item.custom_hair_stylist_2,
+				custom_hair_stylist_3: item.custom_hair_stylist_3,
 				qty: flt(item.qty),
 				rate: flt(item.rate),
 				uom: item.uom,

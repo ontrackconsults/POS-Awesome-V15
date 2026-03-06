@@ -692,8 +692,66 @@ def submit_invoice(invoice, data):
     else:
         invoice_doc.submit()
         redeeming_customer_credit(invoice_doc, data, is_payment_entry, total_cash, cash_account, payments)
+        
+    # Create appointment if submit and rebook is enabled
+    if invoice.get("custom_is_submit_and_rebook"):
+        # Get customer details
+        customer_doc = frappe.get_doc("Customer", invoice_doc.customer)
+        email = customer_doc.email_id
+        phone = customer_doc.mobile_no
 
-    return {"name": invoice_doc.name, "status": invoice_doc.docstatus}
+        # Get customer country code if available
+        country_code = ""
+        if hasattr(customer_doc, "custom_country_code"):
+            country_code = customer_doc.custom_country_code or ""
+
+        # Create appointment
+        appointment = frappe.new_doc("Appointment")
+        appointment.customer_email = email
+        appointment.customer_name = invoice_doc.customer
+        appointment.status = "Open"
+        appointment.appointment_with = "Customer"
+        appointment.party = invoice_doc.customer
+        appointment.custom_sales_invoice = invoice_doc.name
+        appointment.customer_phone_number = f"{country_code}{phone}" if country_code else phone
+
+        # Add service staff from invoice items
+        for item in invoice_doc.items:
+            if item.get("custom_hair_stylist_1"):
+                appointment.append(
+                    "custom_service_staff",
+                    {
+                        "service_item": item.get("item_code"),
+                        "sales_person": item.get("custom_hair_stylist_1"),
+                    },
+                )
+            if item.get("custom_hair_stylist_2"):
+                appointment.append(
+                    "custom_service_staff",
+                    {
+                        "service_item": item.get("item_code"),
+                        "sales_person": item.get("custom_hair_stylist_2"),
+                    },
+                )
+            if item.get("custom_hair_stylist_3"):
+                appointment.append(
+                    "custom_service_staff",
+                    {
+                        "service_item": item.get("item_code"),
+                        "sales_person": item.get("custom_hair_stylist_3"),
+                    },
+                )
+
+        appointment.flags.ignore_permissions = True
+        appointment.flags.ignore_mandatory = True
+        appointment.save()
+
+        # Return appointment URL for frontend
+        url = f"{frappe.utils.get_url()}/app/appointment/{appointment.name}"
+        return {"name": invoice_doc.name, "status": invoice_doc.docstatus, "url": url}
+    
+    return {"name": invoice_doc.name, "status": invoice_doc.docstatus, "url": ""}
+   
 
 
 def submit_in_background_job(kwargs):

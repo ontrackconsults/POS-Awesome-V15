@@ -1607,16 +1607,33 @@ export default {
 						return;
 					}
 					if (!r.message) {
-						vm.eventBus.emit("show_message", {
+						vm.eventBus.emit("show_message", { 
 							title: __("Error submitting invoice: No response from server"),
 							color: "error",
 						});
 						vm.loading = false;
 						return;
 					}
-					if (print) {
-						vm.load_print_page();
-					}
+					if (r.message) {
+					
+                        if (r.message.url) {
+                            // vm.load_appointment_page(r.message.url);
+                            window.open(r.message.url, "_blank");
+                        }
+
+                        if (print) {
+ 
+                            vm.load_print_page();
+                        }
+                        vm.eventBus.emit("set_last_invoice", vm.invoice_doc.name);
+                        vm.eventBus.emit("show_mesage", {
+                            text: `Invoice ${r.message.name} is Submited`,
+                            color: "success",
+                        });
+                        frappe.utils.play_sound("submit");
+                        this.addresses = [];
+                    }
+				
 					vm.customer_credit_dict = [];
 					vm.redeem_customer_credit = false;
 					vm.is_cashback = true;
