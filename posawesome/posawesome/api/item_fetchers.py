@@ -167,7 +167,7 @@ def _fetch_item_meta(item_codes: Tuple[str, ...]):
         return []
     return frappe.get_all(
         "Item",
-        fields=["name", "has_batch_no", "has_serial_no", "stock_uom"],
+        fields=["name", "has_batch_no", "has_serial_no", "stock_uom", "is_stock_item"],
         filters={"name": ["in", item_codes]},
     )
 
@@ -341,6 +341,7 @@ def merge_item_row(
             "actual_qty": lookup_data.stock_map.get(item_code, 0) or 0,
             "has_batch_no": meta.get("has_batch_no"),
             "has_serial_no": meta.get("has_serial_no"),
+            "is_stock_item": meta.get("is_stock_item"),
             "batch_no_data": lookup_data.batch_map.get(item_code, []),
             "serial_no_data": lookup_data.serial_map.get(item_code, []),
             "rate": price_row.get("price_list_rate") if price_row else 0,

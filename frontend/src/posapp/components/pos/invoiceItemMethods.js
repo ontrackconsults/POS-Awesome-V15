@@ -1534,8 +1534,21 @@ export default {
 				return;
 			}
 
+			// Require Service Staff 1 for all non-stock (service) items before proceeding
+			const missingServiceStaff = (this.items || []).filter(
+				(item) => item && item.is_stock_item === 0 && !item.custom_hair_stylist_1,
+			);
+			if (missingServiceStaff.length) {
+				console.log("Service staff validation failed for service items");
+				this.eventBus.emit("show_message", {
+					title: __(`Service Staff 1 is mandatory for all service items (non-stock)`),
+					color: "error",
+				});
+				return;
+			}
+
 			console.log("Basic validations passed, proceeding to main validation");
-			const isValid = this.validate();
+			const isValid = await this.validate();
 			console.log("Main validation result:", isValid);
 
 			if (!isValid) {
@@ -1681,6 +1694,25 @@ export default {
 	// Validate invoice before payment/submit (return logic, quantity, rates, etc)
 	async validate() {
 		console.log("Starting return validation");
+
+		// Require Service Staff 1 for all non-stock items
+		if (Array.isArray(this.items) && this.items.length) {
+			const missingServiceStaff = this.items.filter(
+				(item) =>
+					item &&
+					item.is_stock_item === 0 &&
+					!item.custom_hair_stylist_1
+			);
+			if (missingServiceStaff.length) {
+				this.eventBus.emit("show_message", {
+					title: __(
+						"Service Staff 1 is mandatory for all service items (non-stock)"
+					),
+					color: "error",
+				});
+				return false;
+			}
+		}
 
 		// For all returns, check if amounts are negative
 		if (this.isReturnInvoice) {
@@ -1915,6 +1947,13 @@ export default {
 			});
 
 			if (response?.message) {
+				console.log(
+					"[POSAwesome] Bulk item details (is_stock_item):",
+					response.message.map((row) => ({
+						item_code: row.item_code,
+						is_stock_item: row.is_stock_item,
+					})),
+				);
 				items.forEach((item) => {
 					const updated_item = response.message.find(
 						(element) => element.posa_row_id == item.posa_row_id,

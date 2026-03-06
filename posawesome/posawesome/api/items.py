@@ -900,6 +900,8 @@ def get_item_detail(item, doc=None, warehouse=None, price_list=None, company=Non
         doc,
         overwrite_warehouse=False,
     )
+    # Ensure is_stock_item flag is always present in the response
+    res["is_stock_item"] = frappe.db.get_value("Item", item_code, "is_stock_item") or 0
     if item.get("is_stock_item") and warehouse:
         res["actual_qty"] = get_stock_availability(item_code, warehouse)
     res["max_discount"] = max_discount
