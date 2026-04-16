@@ -167,6 +167,13 @@ def get_customer_info(customer=None, company=None):
     res["gender"] = customer.gender
     res["tax_id"] = customer.tax_id
     res["posa_discount"] = customer.posa_discount
+    res["custom_customer_id"] = customer.get("custom_customer_id")
+    res["custom_customer_first_name"] = customer.get("custom_customer_first_name")
+    res["custom_customer_last_name"] = customer.get("custom_customer_last_name")
+    res["custom_customer_name"] = customer.get("custom_customer_name")
+    res["custom_country_name"] = customer.get("custom_country_name")
+    res["custom_country_code"] = customer.get("custom_country_code")
+    res["custom_search_mobile_no"] = customer.get("custom_search_mobile_no")
     res["name"] = customer.name
     res["customer_name"] = customer.customer_name
     res["customer_group_price_list"] = frappe.get_value(
@@ -258,6 +265,12 @@ def create_customer(
     address_line1=None,
     city=None,
     country=None,
+    custom_customer_id=None,
+    custom_customer_first_name=None,
+    custom_customer_last_name=None,
+    custom_customer_name=None,
+    custom_country_name=None,
+    custom_country_code=None,
 ):
     pos_profile = json.loads(pos_profile_doc)
 
@@ -292,6 +305,13 @@ def create_customer(
                     "posa_birthday": formatted_birthday,
                     "customer_type": customer_type,
                     "gender": gender,
+                    "custom_customer_id": cstr(custom_customer_id or ""),
+                    "custom_customer_first_name": cstr(custom_customer_first_name or ""),
+                    "custom_customer_last_name": cstr(custom_customer_last_name or ""),
+                    "custom_customer_name": cstr(custom_customer_name or customer_name or ""),
+                    "custom_country_name": cstr(custom_country_name or ""),
+                    "custom_country_code": cstr(custom_country_code or ""),
+                    "custom_search_mobile_no": cstr(mobile_no or ""),
                 }
             )
             if customer_group:
@@ -333,6 +353,32 @@ def create_customer(
         customer_doc.posa_birthday = formatted_birthday
         customer_doc.customer_type = customer_type
         customer_doc.gender = gender
+        custom_fields_present = any(
+            v is not None
+            for v in (
+                custom_customer_id,
+                custom_customer_first_name,
+                custom_customer_last_name,
+                custom_customer_name,
+                custom_country_name,
+                custom_country_code,
+            )
+        )
+        if custom_fields_present:
+            if custom_customer_id is not None:
+                customer_doc.custom_customer_id = custom_customer_id
+            if custom_customer_first_name is not None:
+                customer_doc.custom_customer_first_name = custom_customer_first_name
+            if custom_customer_last_name is not None:
+                customer_doc.custom_customer_last_name = custom_customer_last_name
+            if custom_customer_name is not None:
+                customer_doc.custom_customer_name = custom_customer_name
+            if custom_country_name is not None:
+                customer_doc.custom_country_name = custom_country_name
+            if custom_country_code is not None:
+                customer_doc.custom_country_code = custom_country_code
+        if mobile_no is not None:
+            customer_doc.custom_search_mobile_no = mobile_no
         customer_doc.save()
 
         # ensure contact details are synced correctly

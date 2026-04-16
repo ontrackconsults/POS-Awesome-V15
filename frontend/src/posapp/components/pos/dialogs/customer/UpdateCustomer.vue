@@ -34,6 +34,28 @@
 									v-model="customer_name"
 								></v-text-field>
 							</v-col>
+							<v-col cols="6" v-if="!hideNonEssential">
+								<v-text-field
+									density="compact"
+									color="primary"
+									:label="frappe._('First Name')"
+									hide-details
+									class="pos-themed-input"
+									v-model="customer_first_name"
+									@update:model-value="syncCustomerNameFromParts"
+								></v-text-field>
+							</v-col>
+							<v-col cols="6" v-if="!hideNonEssential">
+								<v-text-field
+									density="compact"
+									color="primary"
+									:label="frappe._('Last Name')"
+									hide-details
+									class="pos-themed-input"
+									v-model="customer_last_name"
+									@update:model-value="syncCustomerNameFromParts"
+								></v-text-field>
+							</v-col>
 							<v-col cols="6">
 								<v-text-field
 									density="compact"
@@ -50,8 +72,44 @@
 									color="primary"
 									:label="frappe._('Mobile No')"
 									class="pos-themed-input"
-									hide-details
+									:error="mobileNoError"
+									:error-messages="mobileNoError ? mobileNoErrorMessage : ''"
 									v-model="mobile_no"
+									type="tel"
+									@update:model-value="limitMobileNoForGhana"
+								></v-text-field>
+							</v-col>
+							<v-col cols="6">
+								<v-select
+									v-model="custom_country_name"
+									:items="countries"
+									variant="outlined"
+									density="compact"
+									:label="__('Phone country')"
+									class="pos-themed-input"
+									hide-details
+									@update:model-value="updateCountryCode"
+								></v-select>
+							</v-col>
+							<v-col cols="6">
+								<v-text-field
+									density="compact"
+									color="primary"
+									:label="frappe._('Dialing code')"
+									hide-details
+									readonly
+									class="pos-themed-input"
+									v-model="custom_country_code"
+								></v-text-field>
+							</v-col>
+							<v-col cols="12">
+								<v-text-field
+									density="compact"
+									color="primary"
+									:label="frappe._('Customer ID')"
+									hide-details
+									class="pos-themed-input"
+									v-model="custom_customer_id"
 								></v-text-field>
 							</v-col>
 							<v-col cols="12" v-if="!hideNonEssential">
@@ -225,6 +283,48 @@ import { useUIStore } from "../../../../stores/uiStore.js";
 import { storeToRefs } from "pinia";
 import { useToastStore } from "../../../../stores/toastStore.js";
 
+/** Dialing codes for POS country picklists (Ontrack / Ghana POS). */
+const PHONE_COUNTRY_CODES = {
+	Afghanistan: "+93",
+	Australia: "+61",
+	Bahrain: "+973",
+	Bangladesh: "+880",
+	Canada: "+1",
+	China: "+86",
+	Denmark: "+45",
+	France: "+33",
+	Germany: "+49",
+	Ghana: "+233",
+	India: "+91",
+	Indonesia: "+62",
+	Italy: "+39",
+	Japan: "+81",
+	Kuwait: "+965",
+	Malaysia: "+60",
+	Nepal: "+977",
+	Netherlands: "+31",
+	"New Zealand": "+64",
+	Norway: "+47",
+	Oman: "+968",
+	Pakistan: "+92",
+	Philippines: "+63",
+	Qatar: "+974",
+	"Saudi Arabia": "+966",
+	Singapore: "+65",
+	"South Korea": "+82",
+	Spain: "+34",
+	"Sri Lanka": "+94",
+	Sweden: "+46",
+	Switzerland: "+41",
+	Syria: "+963",
+	Thailand: "+66",
+	"United Arab Emirates": "+971",
+	"United Kingdom": "+44",
+	"United States": "+1",
+	Vietnam: "+84",
+	Yemen: "+967",
+};
+
 export default {
 	setup() {
 		const customersStore = useCustomersStore();
@@ -249,6 +349,13 @@ export default {
 		customer_name: "",
 		tax_id: "",
 		mobile_no: "",
+		mobileNoError: false,
+		mobileNoErrorMessage: "",
+		customer_first_name: "",
+		customer_last_name: "",
+		custom_customer_id: "",
+		custom_country_name: "Ghana",
+		custom_country_code: "+233",
 		address_line1: "",
 		city: "",
 		country: "Pakistan",
@@ -288,6 +395,7 @@ export default {
 			"Norway",
 			"Oman",
 			"Pakistan",
+			"Ghana",
 			"Philippines",
 			"Qatar",
 			"Saudi Arabia",
@@ -366,6 +474,33 @@ export default {
 	},
 	computed: {},
 	methods: {
+		syncCustomerNameFromParts() {
+			const first = (this.customer_first_name || "").trim();
+			const last = (this.customer_last_name || "").trim();
+			if (first || last) {
+				this.customer_name = `${first} ${last}`.trim();
+			}
+		},
+		updateCountryCode() {
+			const raw = (this.custom_country_name || "").trim();
+			this.custom_country_code = PHONE_COUNTRY_CODES[raw] || "";
+			this.limitMobileNoForGhana();
+		},
+		limitMobileNoForGhana() {
+			if (this.custom_country_name === "Ghana") {
+				const mobileNo = String(this.mobile_no || "").trim();
+				if (mobileNo.length > 0 && mobileNo.length !== 10) {
+					this.mobileNoError = true;
+					this.mobileNoErrorMessage = __("Mobile number must be exactly 10 digits for Ghana");
+				} else {
+					this.mobileNoError = false;
+					this.mobileNoErrorMessage = "";
+				}
+			} else {
+				this.mobileNoError = false;
+				this.mobileNoErrorMessage = "";
+			}
+		},
 		focusCustomerNameField() {
 			this.$nextTick(() => {
 				const field = this.$refs.customerNameField;
@@ -413,6 +548,9 @@ export default {
 				this.customer_name ||
 				this.tax_id ||
 				this.mobile_no ||
+				this.custom_customer_id ||
+				this.customer_first_name ||
+				this.customer_last_name ||
 				this.address_line1 ||
 				this.email_id ||
 				this.referral_code ||
@@ -434,11 +572,19 @@ export default {
 		},
 		clear_customer() {
 			this.customer_name = "";
+			this.customer_first_name = "";
+			this.customer_last_name = "";
+			this.custom_customer_id = "";
 			this.tax_id = "";
 			this.mobile_no = "";
+			this.mobileNoError = false;
+			this.mobileNoErrorMessage = "";
 			this.address_line1 = "";
 			this.city = "";
 			this.country = (this.pos_profile && this.pos_profile.posa_default_country) || "Pakistan";
+			this.custom_country_name =
+				(this.pos_profile && this.pos_profile.posa_default_country) || "Ghana";
+			this.updateCountryCode();
 			this.email_id = "";
 			this.referral_code = "";
 			this.birthday = "";
@@ -531,6 +677,16 @@ export default {
 				return;
 			}
 
+			this.limitMobileNoForGhana();
+			if (this.mobileNoError) {
+				frappe.throw(this.mobileNoErrorMessage || __("Invalid mobile number"));
+				return;
+			}
+
+			const displayName =
+				`${(this.customer_first_name || "").trim()} ${(this.customer_last_name || "").trim()}`.trim() ||
+				(this.customer_name || "").trim();
+
 			// Format birthday to YYYY-MM-DD if it exists and is in another format
 			let formatted_birthday = null;
 			if (this.birthday) {
@@ -599,6 +755,12 @@ export default {
 				territory: this.territory,
 				customer_type: this.customer_type,
 				gender: this.gender,
+				custom_customer_id: this.custom_customer_id,
+				custom_customer_first_name: this.customer_first_name,
+				custom_customer_last_name: this.customer_last_name,
+				custom_customer_name: displayName,
+				custom_country_name: this.custom_country_name,
+				custom_country_code: this.custom_country_code,
 			};
 			const apiArgs = {
 				...args,
@@ -708,6 +870,9 @@ export default {
 					const data = this.customerToUpdate;
 					if (data) {
 						this.customer_name = data.customer_name || data.name || ""; // fallback
+						this.customer_first_name = data.custom_customer_first_name || "";
+						this.customer_last_name = data.custom_customer_last_name || "";
+						this.custom_customer_id = data.custom_customer_id || "";
 						this.customer_id = data.name;
 						this.address_line1 = data.primary_address || data.address_line1 || "";
 						this.city = data.city || "";
@@ -715,6 +880,11 @@ export default {
 							data.country ||
 							(this.pos_profile && this.pos_profile.posa_default_country) ||
 							"Pakistan";
+						this.custom_country_name =
+							data.custom_country_name ||
+							(this.pos_profile && this.pos_profile.posa_default_country) ||
+							"Ghana";
+						this.updateCountryCode();
 						this.tax_id = data.tax_id;
 						this.mobile_no = data.mobile_no;
 						this.email_id = data.email_id;
@@ -740,6 +910,14 @@ export default {
 				if (profile) {
 					this.pos_profile = profile;
 					this.country = (profile && profile.posa_default_country) || "Pakistan";
+					if (!this.isUpdateCustomerDialogOpen) {
+						return;
+					}
+					if (!this.customer_id && !this.customerToUpdate) {
+						this.custom_country_name =
+							(profile && profile.posa_default_country) || "Ghana";
+						this.updateCountryCode();
+					}
 				}
 			},
 			{ deep: true, immediate: true },
