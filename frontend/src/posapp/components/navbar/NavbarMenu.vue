@@ -405,6 +405,14 @@ export default {
 					tone: "warning",
 					handler: "lockPos",
 				},
+				{
+					id: "change-pos-profile",
+					label: __("Change POS Profile"),
+					subtitle: __("Switch current POS profile"),
+					icon: "mdi-store-cog-outline",
+					tone: "primary",
+					handler: "changePosProfile",
+				},
 				this.isEnabledSetting(this.posProfile?.posa_allow_print_last_invoice)
 					? {
 							id: "print-last-invoice",
@@ -619,6 +627,10 @@ export default {
 				case "lockPos":
 					this.closeMenu();
 					this.$emit("lock-pos");
+					break;
+				case "changePosProfile":
+					this.closeMenu();
+					this.$emit("change-pos-profile");
 					break;
 				case "printLastInvoiceAction":
 					this.closeMenu();
@@ -849,6 +861,7 @@ export default {
 		"open-employee-switch",
 		"lock-pos",
 		"open-customer-display",
+		"change-pos-profile",
 		"toggle-offline",
 		"clear-cache",
 		"show-about",

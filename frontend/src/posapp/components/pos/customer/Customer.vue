@@ -14,7 +14,7 @@
 				:loading="isCustomerSearchLocked"
 				v-model="internalCustomer"
 				:items="filteredCustomers"
-				item-title="customer_name"
+				:item-title="getCustomerDisplayName"
 				item-value="name"
 				:no-data-text="customerNoDataText"
 				hide-details
@@ -79,20 +79,34 @@
 				<!-- Dropdown display -->
 				<template #item="{ props, item }">
 					<v-list-item v-bind="props">
-						<v-list-item-subtitle v-if="item.raw.customer_name !== item.raw.name">
-							<div v-html="`ID: ${item.raw.name}`"></div>
+						<v-list-item-subtitle
+							v-if="
+								getCustomerField(item, 'customer_name') &&
+								getCustomerField(item, 'customer_name') !== getCustomerField(item, 'name')
+							"
+						>
+							<div v-html="`ID: ${getCustomerField(item, 'name')}`"></div>
 						</v-list-item-subtitle>
-						<v-list-item-subtitle v-if="item.raw.tax_id">
-							<div v-html="`TAX ID: ${item.raw.tax_id}`"></div>
+						<v-list-item-subtitle v-if="getCustomerField(item, 'custom_search_mobile_no')">
+							<div v-html="`Mobile No: ${getCustomerField(item, 'custom_search_mobile_no')}`"></div>
 						</v-list-item-subtitle>
-						<v-list-item-subtitle v-if="item.raw.email_id">
-							<div v-html="`Email: ${item.raw.email_id}`"></div>
+						<v-list-item-subtitle v-if="getCustomerField(item, 'custom_customer_id')">
+							<div v-html="`Customer ID: ${getCustomerField(item, 'custom_customer_id')}`"></div>
 						</v-list-item-subtitle>
-						<v-list-item-subtitle v-if="item.raw.mobile_no">
-							<div v-html="`Mobile No: ${item.raw.mobile_no}`"></div>
+						<v-list-item-subtitle v-if="getCustomerField(item, 'customer_group')">
+							<div v-html="`Customer Group: ${getCustomerField(item, 'customer_group')}`"></div>
 						</v-list-item-subtitle>
-						<v-list-item-subtitle v-if="item.raw.primary_address">
-							<div v-html="`Primary Address: ${item.raw.primary_address}`"></div>
+						<v-list-item-subtitle v-if="getCustomerField(item, 'tax_id')">
+							<div v-html="`Tax ID: ${getCustomerField(item, 'tax_id')}`"></div>
+						</v-list-item-subtitle>
+						<v-list-item-subtitle v-if="getCustomerField(item, 'email_id')">
+							<div v-html="`Email: ${getCustomerField(item, 'email_id')}`"></div>
+						</v-list-item-subtitle>
+						<v-list-item-subtitle v-if="getCustomerField(item, 'mobile_no')">
+							<div v-html="`Mobile No: ${getCustomerField(item, 'mobile_no')}`"></div>
+						</v-list-item-subtitle>
+						<v-list-item-subtitle v-if="getCustomerField(item, 'primary_address')">
+							<div v-html="`Primary Address: ${getCustomerField(item, 'primary_address')}`"></div>
 						</v-list-item-subtitle>
 					</v-list-item>
 				</template>
@@ -274,6 +288,41 @@ export default {
 				minimumFractionDigits: 0,
 				maximumFractionDigits: 2,
 			}).format(numericValue);
+		};
+		const getCustomerDisplayName = (item) => {
+			const source =
+				item?.raw ||
+				item?.value ||
+				item?.props ||
+				item?.data ||
+				item;
+			if (!source) return "";
+			if (typeof source === "string") return source;
+			const baseName =
+				source.custom_customer_name ||
+				source.customer_name ||
+				source.name ||
+				"";
+			const groupLabel = source.customer_group
+				? ` (${source.customer_group})`
+				: "";
+			return `${baseName}${groupLabel}`;
+		};
+		const getCustomerField = (item, fieldname) => {
+			const candidates = [
+				item?.raw,
+				item?.value,
+				item?.props,
+				item?.data,
+				item?.item,
+				item,
+			];
+			for (const source of candidates) {
+				if (source && source[fieldname] !== undefined && source[fieldname] !== null) {
+					return source[fieldname];
+				}
+			}
+			return "";
 		};
 
 		const searchDebounce = _.debounce((term) => {
@@ -549,6 +598,8 @@ export default {
 			networkOnline,
 			customerInfo,
 			formatCustomerMetric,
+			getCustomerDisplayName,
+			getCustomerField,
 		};
 	},
 };

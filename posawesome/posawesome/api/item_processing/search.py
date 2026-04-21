@@ -323,6 +323,7 @@ def _shape_item_row(
 
     if (
         plan.posa_display_items_in_stock
+        and cint(item.get("is_stock_item")) == 1
         and (not detail.get("actual_qty") or detail.get("actual_qty") < 0)
         and not item.get("has_variants")
     ):

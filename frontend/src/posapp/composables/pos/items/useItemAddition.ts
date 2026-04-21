@@ -394,7 +394,7 @@ export function useItemAddition() {
 				const maxQty =
 					item._base_actual_qty / (item.conversion_factor || 1);
 
-				if (currentQty + requestedQty > maxQty) {
+				if ((currentQty + requestedQty > maxQty) && item.is_stock_item == 1) {
 					toastStore.show({
 						title: __("Quantity exceeds available stock"),
 						color: "warning",

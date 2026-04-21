@@ -418,6 +418,69 @@
 						</div>
 					</div>
 				</div>
+
+				<div
+					class="posa-form-section"
+					v-if="shouldShowServiceStaff(item, pos_profile)"
+				>
+					<div class="posa-section-header">
+						<v-icon size="small" class="section-icon">mdi-account-group</v-icon>
+						<span class="posa-section-title">{{ __("Service Staff") }}</span>
+					</div>
+					<div class="posa-form-row">
+						<div class="posa-form-field">
+							<v-autocomplete
+								v-model="item.custom_hair_stylist_1"
+								:items="salesPersons"
+								item-title="sales_person_name"
+								item-value="name"
+								variant="outlined"
+								density="compact"
+								color="primary"
+								class="pos-themed-input"
+								:label="frappe._('Service Staff 1')"
+								clearable
+								:auto-select-first="true"
+								:filter="salesPersonFilter"
+								@update:model-value="updateSalesPerson(item.posa_row_id, $event, '', '')"
+							/>
+						</div>
+						<div class="posa-form-field">
+							<v-autocomplete
+								v-model="item.custom_hair_stylist_2"
+								:items="salesPersons"
+								item-title="sales_person_name"
+								item-value="name"
+								variant="outlined"
+								density="compact"
+								color="primary"
+								class="pos-themed-input"
+								:label="frappe._('Service Staff 2')"
+								clearable
+								:auto-select-first="true"
+								:filter="salesPersonFilter"
+								@update:model-value="updateSalesPerson(item.posa_row_id, '', $event, '')"
+							/>
+						</div>
+						<div class="posa-form-field">
+							<v-autocomplete
+								v-model="item.custom_hair_stylist_3"
+								:items="salesPersons"
+								item-title="sales_person_name"
+								item-value="name"
+								variant="outlined"
+								density="compact"
+								color="primary"
+								class="pos-themed-input"
+								:label="frappe._('Service Staff 3')"
+								clearable
+								:auto-select-first="true"
+								:filter="salesPersonFilter"
+								@update:model-value="updateSalesPerson(item.posa_row_id, '', '', $event)"
+							/>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 		<!-- Lazy placeholder -->
@@ -460,6 +523,14 @@ interface Props {
 	setSerialNo: (_item: any) => void;
 	setBatchQty: (_item: any, _event: any) => void;
 	validateDueDate: (_item: any) => void;
+	salesPersons: any[];
+	updateSalesPerson: (
+		_posaRowId: string,
+		_salesPerson1: string,
+		_salesPerson2: string,
+		_salesPerson3: string,
+	) => void;
+	salesPersonFilter: (_item: any, _queryText: string) => boolean;
 }
 
 defineProps<Props>();
@@ -473,6 +544,12 @@ const frappe = (window as any).frappe || { _: (s: string) => s };
 
 const onQtyChange = (item: CartItem, event: any) => {
 	emit("qty-change", item, event);
+};
+
+const shouldShowServiceStaff = (item: any, profile: any) => {
+	// Treat anything not explicitly marked as stock item as service-capable.
+	const isExplicitStockItem = Number(item?.is_stock_item) === 1;
+	return !isExplicitStockItem || Boolean(profile?.custom_show_service_staff_for_products);
 };
 
 const getRaw = (item: any) => item?.raw || {};

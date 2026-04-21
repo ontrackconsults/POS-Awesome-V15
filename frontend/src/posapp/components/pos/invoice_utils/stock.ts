@@ -40,32 +40,7 @@ export function calc_stock_qty(context: any, item: any, value: any) {
 		context.update_qty_limits(item);
 	}
 
-	const blockSale = Boolean(
-		context.pos_profile?.posa_block_sale_beyond_available_qty ||
-		context.blockSaleBeyondAvailableQty,
-	);
-	const allowNegativeStock =
-		!blockSale &&
-		(parseBooleanSetting(context.stock_settings?.allow_negative_stock) ||
-			parseBooleanSetting(item?.allow_negative_stock));
 	let clamped = false;
-	if (
-		blockSale &&
-		!allowNegativeStock &&
-		item.max_qty !== undefined &&
-		flt(item.qty) > item.max_qty
-	) {
-		context.toastStore.show({
-			title: __("Quantity exceeds available stock"),
-			text: __(
-				"The quantity for {0} has been adjusted to the maximum available stock.",
-				[item.item_name],
-			),
-			color: "warning",
-		});
-		item.qty = item.max_qty;
-		clamped = true;
-	}
 
 	if (flt(item.qty) === 0) {
 		if (context.remove_item) context.remove_item(item);

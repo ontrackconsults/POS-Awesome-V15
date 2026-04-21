@@ -20,6 +20,25 @@ export async function validate(context: any) {
 	}
 
 	// For all returns, check if amounts are negative
+	const serviceItemsMissingStaff = (context.items || []).filter((item: any) => {
+		const isServiceItem = Number(item?.is_stock_item) !== 1;
+		if (!isServiceItem) return false;
+		const hasAnyStaff = Boolean(
+			item?.custom_hair_stylist_1 ||
+			item?.custom_hair_stylist_2 ||
+			item?.custom_hair_stylist_3,
+		);
+		return !hasAnyStaff;
+	});
+
+	if (serviceItemsMissingStaff.length) {
+		context.toastStore.show({
+			title: __("Service staff required"),
+			color: "error",
+		});
+		return false;
+	}
+
 	if (context.isReturnInvoice) {
 		// Check if quantities are negative
 		const positiveItems = context.items.filter((item) => item.qty >= 0 || item.stock_qty >= 0);

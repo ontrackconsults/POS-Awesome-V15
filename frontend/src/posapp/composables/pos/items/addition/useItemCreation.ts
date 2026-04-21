@@ -135,11 +135,15 @@ export function useItemCreation() {
 			new_item.serial_no_selected = [];
 			new_item.serial_no_selected_count = 0;
 		}
-		// Expand row if batch/serial required
+		// Expand row for items that need immediate operator input:
+		// - batch/serial-managed items
+		// - service items (staff assignment fields)
+		const isServiceItem = Number(new_item.is_stock_item) === 0;
 		if (
 			(!context?.pos_profile?.posa_auto_set_batch &&
 				new_item.has_batch_no) ||
-			new_item.has_serial_no
+			new_item.has_serial_no ||
+			isServiceItem
 		) {
 			// Only store the row ID to keep expanded array consistent
 			if (Array.isArray(context.expanded)) {

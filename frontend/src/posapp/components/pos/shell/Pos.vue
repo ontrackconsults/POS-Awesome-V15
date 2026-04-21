@@ -462,6 +462,9 @@ export default {
 				});
 				eventBus.on("focus_additional_discount", focusAdditionalDiscountField);
 				eventBus.on("set_compact_panel", setCompactPanel);
+				eventBus.on("change_pos_profile", () => {
+					dialog.value = true;
+				});
 			}
 			nextTick(() => {
 				updateBottomDockHeight();
@@ -480,6 +483,7 @@ export default {
 				eventBus.off("submit_closing_pos");
 				eventBus.off("focus_additional_discount", focusAdditionalDiscountField);
 				eventBus.off("set_compact_panel", setCompactPanel);
+				eventBus.off("change_pos_profile");
 			}
 		});
 

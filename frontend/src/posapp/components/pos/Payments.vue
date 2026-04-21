@@ -216,6 +216,20 @@
 					<div class="payment-section__header">
 						<h3 class="payment-section__title">{{ __("Sales Person and Print") }}</h3>
 					</div>
+					<v-switch
+						v-if="showSubmitAndRebookToggle"
+						:model-value="Boolean(invoice_doc?.custom_is_submit_and_rebook)"
+						:label="__('Submit and Rebook')"
+						color="primary"
+						hide-details
+						@update:model-value="
+							(value) => {
+								if (invoice_doc) {
+									invoice_doc.custom_is_submit_and_rebook = value ? 1 : 0;
+								}
+							}
+						"
+					/>
 					<PaymentSelectionFields
 						:sales-persons="sales_persons"
 						:sales-person="sales_person"
@@ -476,6 +490,10 @@ const request_payment_field = computed(() => {
 	);
 });
 
+const showSubmitAndRebookToggle = computed(() =>
+	Boolean(parseBooleanSetting(pos_profile.value?.custom_show_submit_and_rebook_button)),
+);
+
 const returnValidityEnabled = computed(() => {
 	return Boolean(
 		pos_profile.value?.posa_enable_return_validity || pos_settings.value?.posa_enable_return_validity,
@@ -578,8 +596,9 @@ const {
 					}
 				}
 			},
-			onSuccess: () => {
+			onSuccess: (message) => {
 				eventBus.emit("focus_item_search");
+				void routeToRebookAppointment(message);
 			},
 		});
 	},
@@ -1045,6 +1064,41 @@ const finishSubmissionNavigation = (clearInvoice = false) => {
 	}
 };
 
+const routeToRebookAppointment = async (
+	submissionMessage = {},
+	shouldRebook = false,
+) => {
+	if (!shouldRebook) {
+		return;
+	}
+
+	const salesInvoiceName = submissionMessage?.name || invoice_doc.value?.name;
+	if (!salesInvoiceName) {
+		return;
+	}
+
+	try {
+		const appointments = await frappe.db.get_list("Appointment", {
+			fields: ["name"],
+			filters: { custom_sales_invoice: salesInvoiceName },
+			order_by: "creation desc",
+			limit: 1,
+		});
+		const appointmentName = appointments?.[0]?.name;
+		if (appointmentName) {
+			const appointmentUrl =
+				typeof frappe?.utils?.get_form_link === "function"
+					? frappe.utils.get_form_link("Appointment", appointmentName)
+					: `/app/appointment/${encodeURIComponent(appointmentName)}`;
+			if (typeof window !== "undefined" && typeof window.open === "function") {
+				window.open(appointmentUrl, "_blank");
+			}
+		}
+	} catch (error) {
+		console.error("Failed to route to rebook appointment:", error);
+	}
+};
+
 const buildProfilePaymentLines = () => {
 	const profilePayments = Array.isArray(pos_profile.value?.payments)
 		? pos_profile.value.payments
@@ -1507,6 +1561,9 @@ const submitInvoiceWrapper = async (print, callbackOverrides = {}, options = {})
 	if (submissionInFlight.value) {
 		return;
 	}
+	const shouldRouteToAppointment = Boolean(
+		invoice_doc.value?.custom_is_submit_and_rebook,
+	);
 
 	submissionInFlight.value = true;
 	loading.value = true;
@@ -1539,13 +1596,14 @@ const submitInvoiceWrapper = async (print, callbackOverrides = {}, options = {})
 					}
 				}
 			},
-			onSuccess: () => {
+			onSuccess: (message) => {
 				customer_credit_dict.value = [];
 				redeem_customer_credit.value = false;
 				is_cashback.value = true;
 				show_change_dialog.value = true;
 				is_credit_return.value = false;
 				sales_person.value = "";
+				void routeToRebookAppointment(message, shouldRouteToAppointment);
 			},
 			onFinishNavigation: (clearInvoice) => {
 				finishSubmissionNavigation(clearInvoice);

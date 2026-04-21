@@ -34,6 +34,7 @@
 				@toggle-theme="handleToggleTheme"
 				@logout="handleLogout"
 				@open-customer-display="handleOpenCustomerDisplay"
+				@change-pos-profile="handleChangePosProfile"
 				@refresh-cache-usage="handleRefreshCacheUsage"
 				@update-after-delete="handleUpdateAfterDelete"
 			/>
@@ -968,6 +969,10 @@ const handleLogout = () => {
 
 const handleOpenCustomerDisplay = () => {
 	eventBus?.emit("open_customer_display");
+};
+
+const handleChangePosProfile = () => {
+	eventBus?.emit("change_pos_profile");
 };
 
 const handleRefreshCacheUsage = () => {

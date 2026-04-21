@@ -181,6 +181,9 @@
 								:setSerialNo="set_serial_no"
 								:setBatchQty="set_batch_qty"
 								:validateDueDate="validate_due_date"
+								:sales_persons="sales_persons"
+								:updateSalesPerson="updateSalesPerson"
+								:salesPersonFilter="salesPersonFilter"
 								:removeItem="remove_item"
 								:subtractOne="subtract_one"
 								:addOne="add_one"
@@ -403,6 +406,7 @@ export default {
 			price_list_rate_dialog_initial_rate: "",
 			price_list_rate_dialog_item_label: "",
 			price_list_rate_dialog_resolver: null,
+			sales_persons: [],
 		};
 	},
 
@@ -735,6 +739,51 @@ export default {
 			this.update_price_list();
 			this.fetch_available_currencies();
 			this.refresh_parked_orders();
+			this.load_sales_persons();
+		},
+		updateSalesPerson(posa_row_id, sales_person, sales_person2, sales_person3) {
+			this.items.findIndex((el) => {
+				if (el.posa_row_id == posa_row_id) {
+					if (typeof sales_person !== "undefined") {
+						el.custom_hair_stylist_1 = sales_person;
+					}
+					if (typeof sales_person2 !== "undefined") {
+						el.custom_hair_stylist_2 = sales_person2;
+					}
+					if (typeof sales_person3 !== "undefined") {
+						el.custom_hair_stylist_3 = sales_person3;
+					}
+				}
+			});
+		},
+		async load_sales_persons() {
+			try {
+				const r = await frappe.call({
+					method: "frappe.client.get_list",
+					args: {
+						doctype: "Sales Person",
+						fields: ["name", "sales_person_name"],
+						filters: { enabled: 1 },
+						order_by: "sales_person_name asc",
+					},
+				});
+				if (r.message) {
+					this.sales_persons = r.message;
+				}
+			} catch (error) {
+				console.error("Failed to load sales persons:", error);
+			}
+		},
+		salesPersonFilter(item, queryText) {
+			const textOne = item?.sales_person_name
+				? item.sales_person_name.toLowerCase()
+				: "";
+			const textTwo = (item?.name || "").toLowerCase();
+			const searchText = (queryText || "").toLowerCase();
+			return (
+				textOne.indexOf(searchText) > -1 ||
+				textTwo.indexOf(searchText) > -1
+			);
 		},
 		async refresh_parked_orders() {
 			if (!this.pos_profile || !this.pos_opening_shift?.name) {

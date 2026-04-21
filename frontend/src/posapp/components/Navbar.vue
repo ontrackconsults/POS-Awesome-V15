@@ -77,6 +77,7 @@
 					@sync-invoices="syncPendingInvoices"
 					@open-employee-switch="openEmployeeSwitch"
 					@lock-pos="lockPosScreen"
+					@change-pos-profile="$emit('change-pos-profile')"
 					@open-customer-display="$emit('open-customer-display')"
 					@clear-cache="clearCache"
 					@show-about="showAboutDialog = true"
@@ -1007,6 +1008,7 @@ export default {
 		"sync-invoices",
 		"retry-status",
 		"open-customer-display",
+		"change-pos-profile",
 		"toggle-offline",
 		"refresh-offline-data",
 		"rebuild-offline-data",

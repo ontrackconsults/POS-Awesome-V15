@@ -98,6 +98,9 @@
 					:set-serial-no="setSerialNo"
 					:set-batch-qty="setBatchQty"
 					:validate-due-date="validateDueDate"
+					:sales-persons="sales_persons"
+					:update-sales-person="updateSalesPerson"
+					:sales-person-filter="salesPersonFilter"
 					@qty-change="handleQtyChange"
 				/>
 			</template>
@@ -174,6 +177,14 @@ interface Props {
 	toggleOffer: (_item: any) => void;
 	changePriceListRate: (_item: any) => void;
 	isNegative: (_value: any) => boolean;
+	sales_persons: any[];
+	updateSalesPerson: (
+		_posaRowId: string,
+		_salesPerson1: string,
+		_salesPerson2: string,
+		_salesPerson3: string,
+	) => void;
+	salesPersonFilter: (_item: any, _queryText: string) => boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {

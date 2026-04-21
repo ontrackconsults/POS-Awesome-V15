@@ -137,10 +137,14 @@ export async function setCustomerStorage(customers: AnyRecord[]) {
 		const clean = customers.map((c) => ({
 			name: c.name,
 			customer_name: c.customer_name,
+			customer_group: c.customer_group,
+			custom_customer_name: c.custom_customer_name,
 			mobile_no: c.mobile_no,
+			custom_search_mobile_no: c.custom_search_mobile_no,
 			email_id: c.email_id,
 			primary_address: c.primary_address,
 			tax_id: c.tax_id,
+			custom_customer_id: c.custom_customer_id,
 			stored_value_balance: c.stored_value_balance || 0,
 			stored_value_sources: c.stored_value_sources || 0,
 		}));

@@ -523,6 +523,24 @@ export const useCustomersStore = defineStore("customers", () => {
 		}
 	}
 
+	async function shouldRefreshCustomersForSchemaChange() {
+		try {
+			const sample = await db.table("customers").limit(50).toArray();
+			if (!sample.length) {
+				return false;
+			}
+			// If legacy cached rows are missing customer_group, force a one-time reload.
+			return sample.some(
+				(row: any) =>
+					typeof row?.customer_group === "undefined" ||
+					row?.customer_group === null,
+			);
+		} catch (error) {
+			console.error("Failed schema check for customers cache", error);
+			return false;
+		}
+	}
+
 	async function load_customer_names_internal() {
 		if (!posProfile.value) {
 			console.debug("Customer fetch skipped: POS Profile not ready");
@@ -539,7 +557,24 @@ export const useCustomersStore = defineStore("customers", () => {
 		logLocalCustomerCount(localCount);
 		syncBootstrapCustomerReadiness(localCount);
 
+		let effectiveLocalCount = localCount;
 		if (localCount > 0) {
+			const shouldRefresh = await shouldRefreshCustomersForSchemaChange();
+			if (shouldRefresh) {
+				await clearCustomerStorage();
+				setCustomersLastSync(null);
+				syncBootstrapCustomerReadiness(0);
+				resetPagination();
+				customersLoaded.value = false;
+				loadProgress.value = 0;
+				totalCustomerCount.value = 0;
+				loadedCustomerCount.value = 0;
+				nextCustomerStart.value = null;
+				effectiveLocalCount = 0;
+			}
+		}
+
+		if (effectiveLocalCount > 0) {
 			customersLoaded.value = true;
 			await searchCustomers(searchTerm.value);
 			await verifyServerCustomerCount();

@@ -422,6 +422,7 @@ export function get_invoice_doc(context: any) {
 	doc.posa_notes = sourceDoc.posa_notes ?? null;
 	doc.posa_authorization_code = sourceDoc.posa_authorization_code ?? null;
 	doc.posa_return_valid_upto = sourceDoc.posa_return_valid_upto ?? null;
+	doc.custom_is_submit_and_rebook = sourceDoc.custom_is_submit_and_rebook ? 1 : 0;
 	doc.posting_date = normalizeBackendDate(
 		context,
 		context.posting_date_display ?? context.posting_date,
