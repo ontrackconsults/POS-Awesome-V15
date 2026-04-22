@@ -354,30 +354,21 @@ def create_customer(
         customer_doc.posa_birthday = formatted_birthday
         customer_doc.customer_type = customer_type
         customer_doc.gender = gender
-        custom_fields_present = any(
-            v is not None
-            for v in (
-                custom_customer_id,
-                custom_customer_first_name,
-                custom_customer_last_name,
-                custom_customer_name,
-                custom_country_name,
-                custom_country_code,
-            )
+        if customer_group:
+            customer_doc.customer_group = customer_group
+        if territory:
+            customer_doc.territory = territory
+
+        # Always sync POS custom identity fields from dialog payload.
+        # This ensures Customer ID updates are persisted reliably.
+        customer_doc.custom_customer_id = cstr(custom_customer_id or "")
+        customer_doc.custom_customer_first_name = cstr(custom_customer_first_name or "")
+        customer_doc.custom_customer_last_name = cstr(custom_customer_last_name or "")
+        customer_doc.custom_customer_name = cstr(
+            custom_customer_name or customer_name or ""
         )
-        if custom_fields_present:
-            if custom_customer_id is not None:
-                customer_doc.custom_customer_id = custom_customer_id
-            if custom_customer_first_name is not None:
-                customer_doc.custom_customer_first_name = custom_customer_first_name
-            if custom_customer_last_name is not None:
-                customer_doc.custom_customer_last_name = custom_customer_last_name
-            if custom_customer_name is not None:
-                customer_doc.custom_customer_name = custom_customer_name
-            if custom_country_name is not None:
-                customer_doc.custom_country_name = custom_country_name
-            if custom_country_code is not None:
-                customer_doc.custom_country_code = custom_country_code
+        customer_doc.custom_country_name = cstr(custom_country_name or "")
+        customer_doc.custom_country_code = cstr(custom_country_code or "")
         if mobile_no is not None:
             customer_doc.custom_search_mobile_no = mobile_no
         customer_doc.save()

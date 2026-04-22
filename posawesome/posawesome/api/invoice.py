@@ -5,7 +5,7 @@
 import frappe
 from frappe import _
 from frappe.model.mapper import get_mapped_doc
-from frappe.utils import add_days, flt
+from frappe.utils import add_days, flt, cstr
 
 from posawesome.posawesome.api.utilities import get_company_domain  # Updated import
 from posawesome.posawesome.api.payments import get_posawesome_credit_redeem_remark
@@ -13,6 +13,8 @@ from posawesome.posawesome.doctype.delivery_charges.delivery_charges import (
     get_applicable_delivery_charges,
 )
 from posawesome.posawesome.doctype.pos_coupon.pos_coupon import update_coupon_code_count
+from posawesome.twilio_sms import send_twilio_sms
+from posawesome.scripts.bulk_sms_ghana import send_sms as send_bulk_sms
 
 
 def validate(doc, method):
@@ -409,6 +411,34 @@ def create_appointment(doc):
     appointment.flags.ignore_permissions = True
     appointment.flags.ignore_mandatory = True
     appointment.save()
+
+    try:
+        sms_settings = frappe.get_doc("SMS Gateway Settings")
+        if sms_settings.enable:
+            receiver_phone = appointment.customer_phone_number or customer_doc.mobile_no
+            gateway = cstr(sms_settings.sms_gateway or "").strip()
+            if gateway == "Bulk Ghana":
+                send_bulk_sms(
+                    api_key=sms_settings.api_key,
+                    phone=receiver_phone,
+                    message="sms_message",
+                    sender_id=sms_settings.sender_id,
+                    context=appointment,
+                    url=sms_settings.url_end_point
+                    or "http://clientlogin.bulksmsgh.com/smsapi",
+                )
+            else:
+                send_twilio_sms(
+                    customer_name=doc.customer,
+                    context=appointment,
+                    reciever_phone_number=receiver_phone,
+                    sms_message="sms_message",
+                )
+    except Exception:
+        frappe.log_error(
+            frappe.get_traceback(),
+            "POSAwesome Submit & Rebook SMS Error",
+        )
     
     # Return appointment URL for frontend
     url = f"{frappe.utils.get_url()}/app/appointment/{appointment.name}"

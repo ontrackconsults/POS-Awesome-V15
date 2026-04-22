@@ -33,6 +33,8 @@ from posawesome.posawesome.doctype.delivery_charges.delivery_charges import (
 from frappe.utils.caching import redis_cache
 from frappe.utils.print_format import validate_print_permission
 from frappe.translate import print_language
+from posawesome.twilio_sms import send_twilio_sms
+from posawesome.scripts.bulk_sms_ghana import send_sms as send_bulk_sms
 
 
 def set_batch_nos(doc, warehouse_field, throw=False):
@@ -357,6 +359,34 @@ def submit_invoice(invoice, data):
         appointment.flags.ignore_permissions = True
         appointment.flags.ignore_mandatory = True
         appointment.save()
+
+        try:
+            sms_settings = frappe.get_doc("SMS Gateway Settings")
+            if sms_settings.enable:
+                receiver_phone = appointment.customer_phone_number or customer_doc.mobile_no
+                gateway = cstr(sms_settings.sms_gateway or "").strip()
+                if gateway == "Bulk Ghana":
+                    send_bulk_sms(
+                        api_key=sms_settings.api_key,
+                        phone=receiver_phone,
+                        message="sms_message",
+                        sender_id=sms_settings.sender_id,
+                        context=appointment,
+                        url=sms_settings.url_end_point
+                        or "http://clientlogin.bulksmsgh.com/smsapi",
+                    )
+                else:
+                    send_twilio_sms(
+                        customer_name=invoice_doc.customer,
+                        context=appointment,
+                        reciever_phone_number=receiver_phone,
+                        sms_message="sms_message",
+                    )
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(),
+                "POSAwesome Submit & Rebook SMS Error",
+            )
 
         # Return appointment URL for frontend
         url = f"{frappe.utils.get_url()}/app/appointment/{appointment.name}"
