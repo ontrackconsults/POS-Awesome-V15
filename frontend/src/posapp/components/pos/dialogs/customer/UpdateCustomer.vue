@@ -106,7 +106,10 @@
 								<v-text-field
 									density="compact"
 									color="primary"
-									:label="frappe._('Customer ID')"
+									:label="
+										frappe._('Customer ID') +
+										(customerIdRequired ? ' *' : '')
+									"
 									hide-details
 									class="pos-themed-input"
 									v-model="custom_customer_id"
@@ -373,6 +376,7 @@ export default {
 		loyalty_points: null,
 		loyalty_program: null,
 		hideNonEssential: false,
+		groupInsuranceByName: {},
 		countries: [
 			"Afghanistan",
 			"Australia",
@@ -472,7 +476,13 @@ export default {
 			}
 		},
 	},
-	computed: {},
+	computed: {
+		customerIdRequired() {
+			const g = this.group;
+			if (!g) return false;
+			return Boolean(this.groupInsuranceByName[g]);
+		},
+	},
 	methods: {
 		syncCustomerNameFromParts() {
 			const first = (this.customer_first_name || "").trim();
@@ -601,7 +611,7 @@ export default {
 			const vm = this;
 			frappe.db
 				.get_list("Customer Group", {
-					fields: ["name"],
+					fields: ["name", "custom_is_insurance"],
 					filters: { is_group: 0 },
 					limit: 1000,
 					order_by: "name",
@@ -610,6 +620,9 @@ export default {
 					if (data.length > 0) {
 						data.forEach((el) => {
 							vm.groups.push(el.name);
+							vm.groupInsuranceByName[el.name] = Boolean(
+								el.custom_is_insurance,
+							);
 						});
 					}
 				});
@@ -674,6 +687,16 @@ export default {
 
 			if (!this.territory) {
 				frappe.throw(__("Customer territory is required"));
+				return;
+			}
+
+			if (
+				this.customerIdRequired &&
+				!String(this.custom_customer_id || "").trim()
+			) {
+				frappe.throw(
+					__("Customer ID is required for the selected customer group"),
+				);
 				return;
 			}
 

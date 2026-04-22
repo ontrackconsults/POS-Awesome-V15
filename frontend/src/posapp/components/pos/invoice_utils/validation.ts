@@ -39,6 +39,22 @@ export async function validate(context: any) {
 		return false;
 	}
 
+	const info = context.customer_info;
+	const insuranceGroup =
+		info &&
+		(info.custom_is_insurance === 1 ||
+			info.custom_is_insurance === true);
+	if (insuranceGroup) {
+		const hasCustomerId = String(info?.custom_customer_id ?? "").trim();
+		if (!hasCustomerId) {
+			context.toastStore.show({
+				title: __("Customer ID is required for insurance customer groups"),
+				color: "error",
+			});
+			return false;
+		}
+	}
+
 	if (context.isReturnInvoice) {
 		// Check if quantities are negative
 		const positiveItems = context.items.filter((item) => item.qty >= 0 || item.stock_qty >= 0);

@@ -15,6 +15,18 @@ from .utils import fetch_sales_person_names
 from .stored_value import get_stored_value_summary
 
 
+def customer_group_requires_customer_id(customer_group):
+    """True when Customer Group has custom_is_insurance set."""
+    if not customer_group:
+        return False
+    try:
+        return bool(
+            int(frappe.db.get_value("Customer Group", customer_group, "custom_is_insurance") or 0)
+        )
+    except Exception:
+        return False
+
+
 def get_customer_groups(pos_profile):
     customer_groups = []
     if pos_profile.get("customer_groups"):
@@ -177,9 +189,21 @@ def get_customer_info(customer=None, company=None):
     res["custom_search_mobile_no"] = customer.get("custom_search_mobile_no")
     res["name"] = customer.name
     res["customer_name"] = customer.customer_name
-    res["customer_group_price_list"] = frappe.get_value(
-        "Customer Group", customer.customer_group, "default_price_list"
-    )
+    if customer.customer_group:
+        group_meta = frappe.db.get_value(
+            "Customer Group",
+            customer.customer_group,
+            ["default_price_list", "custom_is_insurance"],
+            as_dict=True,
+        )
+    else:
+        group_meta = None
+    if group_meta:
+        res["customer_group_price_list"] = group_meta.get("default_price_list")
+        res["custom_is_insurance"] = 1 if group_meta.get("custom_is_insurance") else 0
+    else:
+        res["customer_group_price_list"] = None
+        res["custom_is_insurance"] = 0
 
     effective_price_list = (
         res.get("customer_price_list")
@@ -324,6 +348,13 @@ def create_customer(
             else:
                 customer.territory = "All Territories"
 
+            if customer_group_requires_customer_id(
+                customer.customer_group
+            ) and not cstr(custom_customer_id or "").strip():
+                frappe.throw(
+                    _("Customer ID is required for the selected customer group"),
+                )
+
             customer.save()
 
             if address_line1 or city:
@@ -358,6 +389,13 @@ def create_customer(
             customer_doc.customer_group = customer_group
         if territory:
             customer_doc.territory = territory
+
+        if customer_group_requires_customer_id(
+            customer_doc.customer_group
+        ) and not cstr(custom_customer_id or "").strip():
+            frappe.throw(
+                _("Customer ID is required for the selected customer group"),
+            )
 
         # Always sync POS custom identity fields from dialog payload.
         # This ensures Customer ID updates are persisted reliably.
