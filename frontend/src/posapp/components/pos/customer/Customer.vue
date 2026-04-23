@@ -79,14 +79,7 @@
 				<!-- Dropdown display -->
 				<template #item="{ props, item }">
 					<v-list-item v-bind="props">
-						<v-list-item-subtitle
-							v-if="
-								getCustomerField(item, 'customer_name') &&
-								getCustomerField(item, 'customer_name') !== getCustomerField(item, 'name')
-							"
-						>
-							<div v-html="`ID: ${getCustomerField(item, 'name')}`"></div>
-						</v-list-item-subtitle>
+					
 						<v-list-item-subtitle v-if="getCustomerField(item, 'custom_search_mobile_no')">
 							<div v-html="`Mobile No: ${getCustomerField(item, 'custom_search_mobile_no')}`"></div>
 						</v-list-item-subtitle>
