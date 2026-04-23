@@ -640,13 +640,16 @@ def get_customer_names(pos_profile, query=None):
     condition += get_customer_type_condition(pos_profile)
     
     if query:
-        condition += f""" AND (name LIKE '%{query}%' 
-        OR customer_name LIKE '%{query}%' 
-        OR mobile_no LIKE '%{query}%'
-        OR custom_search_mobile_no LIKE '%{query}%'
-        OR email_id LIKE '%{query}%'
-        OR tax_id LIKE '%{query}%'
-        ) """
+        like_query = frappe.db.escape(f"%{query}%")
+        condition += """ AND (name LIKE {0}
+        OR customer_name LIKE {0}
+        OR custom_customer_id LIKE {0}
+        OR mobile_no LIKE {0}
+        OR custom_search_mobile_no LIKE {0}
+        OR customer_group LIKE {0}
+        OR email_id LIKE {0}
+        OR tax_id LIKE {0}
+        ) """.format(like_query)
     
     customers = frappe.db.sql(
         """
