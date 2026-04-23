@@ -102,9 +102,6 @@
 						<v-list-item-subtitle v-if="getCustomerField(item, 'email_id')">
 							<div v-html="`Email: ${getCustomerField(item, 'email_id')}`"></div>
 						</v-list-item-subtitle>
-						<v-list-item-subtitle v-if="getCustomerField(item, 'mobile_no')">
-							<div v-html="`Mobile No: ${getCustomerField(item, 'mobile_no')}`"></div>
-						</v-list-item-subtitle>
 						<v-list-item-subtitle v-if="getCustomerField(item, 'primary_address')">
 							<div v-html="`Primary Address: ${getCustomerField(item, 'primary_address')}`"></div>
 						</v-list-item-subtitle>
