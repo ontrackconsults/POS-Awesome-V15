@@ -15,6 +15,14 @@ from .utils import fetch_sales_person_names
 from .stored_value import get_stored_value_summary
 
 
+def normalize_mobile_no(mobile_no):
+    """Trim and remove one leading zero before storing customer mobile numbers."""
+    value = cstr(mobile_no or "").strip()
+    if value.startswith("0"):
+        return value[1:]
+    return value
+
+
 def customer_group_requires_customer_id(customer_group):
     """True when Customer Group has custom_is_insurance set."""
     if not customer_group:
@@ -298,6 +306,7 @@ def create_customer(
     custom_country_code=None,
 ):
     pos_profile = json.loads(pos_profile_doc)
+    normalized_mobile_no = normalize_mobile_no(mobile_no)
 
     # Format birthday to MySQL compatible format (YYYY-MM-DD) if provided
     formatted_birthday = None
@@ -324,7 +333,7 @@ def create_customer(
                     "customer_name": customer_name,
                     "posa_referral_company": company,
                     "tax_id": tax_id,
-                    "mobile_no": mobile_no,
+                    "mobile_no": normalized_mobile_no,
                     "email_id": email_id,
                     "posa_referral_code": referral_code,
                     "posa_birthday": formatted_birthday,
@@ -336,7 +345,7 @@ def create_customer(
                     "custom_customer_name": cstr(custom_customer_name or customer_name or ""),
                     "custom_country_name": cstr(custom_country_name or ""),
                     "custom_country_code": cstr(custom_country_code or ""),
-                    "custom_search_mobile_no": cstr(mobile_no or ""),
+                    "custom_search_mobile_no": normalized_mobile_no,
                 }
             )
             if customer_group:
@@ -379,7 +388,7 @@ def create_customer(
         customer_doc = frappe.get_doc("Customer", customer_id)
         customer_doc.customer_name = customer_name
         customer_doc.tax_id = tax_id
-        customer_doc.mobile_no = mobile_no
+        customer_doc.mobile_no = normalized_mobile_no
         customer_doc.email_id = email_id
         customer_doc.posa_referral_code = referral_code
         customer_doc.posa_birthday = formatted_birthday
@@ -408,12 +417,12 @@ def create_customer(
         customer_doc.custom_country_name = cstr(custom_country_name or "")
         customer_doc.custom_country_code = cstr(custom_country_code or "")
         if mobile_no is not None:
-            customer_doc.custom_search_mobile_no = mobile_no
+            customer_doc.custom_search_mobile_no = normalized_mobile_no
         customer_doc.save()
 
         # ensure contact details are synced correctly
-        if mobile_no:
-            set_customer_info(customer_doc.name, "mobile_no", mobile_no)
+        if normalized_mobile_no:
+            set_customer_info(customer_doc.name, "mobile_no", normalized_mobile_no)
         if email_id:
             set_customer_info(customer_doc.name, "email_id", email_id)
 
