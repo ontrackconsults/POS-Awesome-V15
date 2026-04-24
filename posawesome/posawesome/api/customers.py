@@ -138,7 +138,10 @@ def get_customer_names(pos_profile, limit=None, offset=None, start_after=None, m
             fields=[
                 "name",
                 "customer_group",
+                "custom_customer_id",
+                "custom_customer_name",
                 "mobile_no",
+                "custom_search_mobile_no",
                 "email_id",
                 "tax_id",
                 "customer_name",

@@ -103,7 +103,8 @@ def _build_search_plan(
     limit = _to_positive_int(limit)
     offset = _to_positive_int(offset)
 
-    filters: Dict[str, Any] = {"disabled": 0, "is_sales_item": 1, "is_fixed_asset": 0}
+    # Include non-stock items in POS listing even when "Allow Sales" is not enabled.
+    filters: Dict[str, Any] = {"disabled": 0, "is_fixed_asset": 0}
     if start_after:
         filters["item_name"] = [">", start_after]
     if modified_after:
@@ -116,7 +117,10 @@ def _build_search_plan(
     if item_groups:
         filters["item_group"] = ["in", list(item_groups)]
 
-    or_filters: List[Any] = []
+    or_filters: List[Any] = [
+        ["is_sales_item", "=", 1],
+        ["is_stock_item", "=", 0],
+    ]
     item_code_for_search: Optional[str] = None
     search_words: List[str] = []
     normalized_search_value = ""

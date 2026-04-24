@@ -279,7 +279,11 @@ export const useCustomersStore = defineStore("customers", () => {
 				const values = [
 					customer.customer_name,
 					customer.name,
+					customer.custom_customer_id,
+					customer.custom_customer_name,
 					customer.mobile_no,
+					customer.custom_search_mobile_no,
+					customer.customer_group,
 					customer.email_id,
 					customer.tax_id,
 				]
