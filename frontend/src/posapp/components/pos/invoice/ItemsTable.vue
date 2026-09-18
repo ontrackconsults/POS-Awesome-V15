@@ -56,6 +56,7 @@
 					:row-index="getItemIndex(item)"
 					:visible-columns="finalVisibleColumns"
 					:posProfile="pos_profile"
+					:sales-persons="salesPersons"
 					:isReturnInvoice="isReturnInvoice"
 					:invoiceType="invoiceType"
 					:displayCurrency="displayCurrency"
@@ -178,6 +179,7 @@ import { useItemsTableMerge } from "../../../composables/pos/items/useItemsTable
 import { useItemsTableNameEdit } from "../../../composables/pos/items/useItemsTableNameEdit";
 import { useFormatters } from "../../../composables/core/useFormatters";
 import { useRtl } from "../../../composables/core/useRtl";
+import { getSalesPersonsStorage, setSalesPersonsStorage } from "../../../../offline/index";
 import {
 	activateCartGridCell,
 	ensureCartGridRowRendered,
@@ -200,6 +202,7 @@ import "./items-table-styles.css";
 
 // Global declarations for Frappe
 declare const __: (_str: string, _args?: any[]) => string;
+declare const frappe: any;
 
 interface Props {
 	headers?: any[];
@@ -290,6 +293,33 @@ const nameEdit = useItemsTableNameEdit();
 
 // Computed
 const items = computed(() => invoiceStore.items);
+const salesPersons = ref<any[]>([]);
+
+const loadSalesPersons = () => {
+	const cached = getSalesPersonsStorage?.() || [];
+	if (Array.isArray(cached) && cached.length) {
+		salesPersons.value = cached;
+	}
+	if (typeof frappe === "undefined" || !frappe.call) {
+		return;
+	}
+	frappe.call({
+		method: "posawesome.posawesome.api.utilities.get_sales_person_names",
+		callback: (r: any) => {
+			if (r.message && r.message.length > 0) {
+				salesPersons.value = r.message.map((sp: any) => ({
+					value: sp.name,
+					title: sp.sales_person_name,
+					sales_person_name: sp.sales_person_name,
+					name: sp.name,
+				}));
+				if (props.pos_profile?.posa_local_storage) {
+					setSalesPersonsStorage(salesPersons.value);
+				}
+			}
+		},
+	});
+};
 const displayItems = computed(() =>
 	props.counterGrid ? [...items.value, counterGridEntryItem] : items.value,
 );
@@ -1171,6 +1201,7 @@ onMounted(() => {
 	logComponentRender({ $el: tableContainer.value }, "ItemsTable", "mounted", {
 		rows: items.value?.length || 0,
 	});
+	loadSalesPersons();
 	eventBus?.on?.("open_batch_serial_selector", openBatchSerialSelector);
 });
 

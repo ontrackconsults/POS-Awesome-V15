@@ -113,6 +113,27 @@ export function useInvoiceItems(invoiceType: Ref<string>) {
 			required: false,
 		},
 		{
+			title: __("Service Staff 1"),
+			key: "custom_hair_stylist_1",
+			align: "start",
+			required: false,
+			width: "160px",
+		},
+		{
+			title: __("Service Staff 2"),
+			key: "custom_hair_stylist_2",
+			align: "start",
+			required: false,
+			width: "160px",
+		},
+		{
+			title: __("Service Staff 3"),
+			key: "custom_hair_stylist_3",
+			align: "start",
+			required: false,
+			width: "160px",
+		},
+		{
 			title: __("Actions"),
 			key: "actions",
 			align: "center",
@@ -176,6 +197,11 @@ export function useInvoiceItems(invoiceType: Ref<string>) {
 							if (
 								col.key === "discount_amount" &&
 								pos_profile.value?.posa_display_discount_amount
+							)
+								return true;
+							if (
+								col.key?.startsWith("custom_hair_stylist") &&
+								pos_profile.value?.custom_show_service_staff_for_products
 							)
 								return true;
 							return false;

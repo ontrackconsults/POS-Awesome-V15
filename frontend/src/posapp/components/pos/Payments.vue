@@ -292,6 +292,16 @@
 							@update:sales-person="sales_person = $event"
 							@update:print-format="print_format = $event"
 						/>
+						<v-checkbox
+							v-if="pos_profile?.custom_show_submit_and_rebook_button"
+							v-model="submit_and_rebook"
+							:label="__('Submit and Rebook')"
+							color="primary"
+							hide-details
+							density="compact"
+							class="mt-2"
+							:disabled="readonly"
+						/>
 					</section>
 				</div>
 			</div>
@@ -470,6 +480,7 @@ const credit_change = ref(0);
 const loading = ref(false);
 const show_change_dialog = ref(false);
 const sales_person = ref("");
+const submit_and_rebook = ref(false);
 const is_credit_return = ref(false);
 const customer_info = ref("");
 const print_format = ref("");
@@ -1913,6 +1924,9 @@ const submitInvoiceWrapper = async (print, callbackOverrides = {}, options = {})
 	loading.value = true;
 	try {
 		await validateSubmission(options.paymentReceived || false);
+		if (invoiceStore.invoiceDoc) {
+			invoiceStore.invoiceDoc.custom_is_submit_and_rebook = submit_and_rebook.value ? 1 : 0;
+		}
 		const submissionResult = await submitInvoice(print, {
 			onPrint: (doc, printOptions = {}) => {
 				if (print) {

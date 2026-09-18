@@ -5,6 +5,7 @@
 
 import frappe
 import time
+from frappe import _
 from frappe.utils import cint, flt
 from posawesome.posawesome.api.erpnext_compat import resolve_make_sales_invoice_from_order
 from posawesome.posawesome.api.tax_contracts import apply_pos_tax_inclusion_contract
@@ -250,3 +251,98 @@ def update_invoice_from_order(data):
     """Backward-compatible facade used by order-to-invoice flow."""
 
     return update_invoice(data)
+
+
+def _get_sms_gateway_settings():
+    try:
+        return frappe.get_doc("SMS Gateway Settings")
+    except Exception:
+        return None
+
+
+def notify_customer_via_sms(doc, method):
+    """Send SMS notification for appointment creation."""
+    sms_gateway_settings = _get_sms_gateway_settings()
+    if not sms_gateway_settings or not sms_gateway_settings.enable:
+        return
+
+    sms_message = "sms_message"
+    if doc.get("custom_sales_invoice") and doc.get("scheduled_time"):
+        if sms_gateway_settings.sms_gateway == "Bulk Ghana":
+            from posawesome.scripts.bulk_sms_ghana import send_sms
+
+            phone_number = sms_gateway_settings.to
+            if sms_gateway_settings.use_customer_phone_number:
+                phone_number = doc.customer_phone_number
+            send_sms(
+                sms_gateway_settings.api_key,
+                phone_number.strip("+"),
+                sms_message,
+                sms_gateway_settings.sender_id,
+                context=doc,
+                url=sms_gateway_settings.url_end_point,
+            )
+        elif sms_gateway_settings.sms_gateway == "Twilio":
+            from posawesome.twilio_sms import send_twilio_sms
+
+            send_twilio_sms(doc.party, doc, doc.customer_phone_number, sms_message)
+        elif sms_gateway_settings.sms_gateway == "Hubtel":
+            from posawesome.hubtel_sms import send_hubtel_sms
+
+            phone_number = sms_gateway_settings.to
+            if sms_gateway_settings.use_customer_phone_number:
+                phone_number = doc.customer_phone_number
+            send_hubtel_sms(doc.party, doc, phone_number, sms_message)
+
+
+def notify_customer_via_sms_submit_only(doc, method):
+    """Send SMS notification for invoice submission."""
+    sms_gateway_settings = _get_sms_gateway_settings()
+    if not sms_gateway_settings or not sms_gateway_settings.enable:
+        return
+
+    if doc.get("custom_is_submit_and_rebook"):
+        return
+
+    sms_message = "sms_message_submit_only"
+    phone_number = (
+        frappe.db.get_value("Customer", doc.customer, ["custom_country_code", "mobile_no"], as_dict=1) or ""
+    )
+    if not phone_number:
+        return
+
+    if phone_number.get("custom_country_code") and phone_number.get("mobile_no"):
+        phone_number_string = phone_number.custom_country_code + phone_number.mobile_no
+
+        if sms_gateway_settings.sms_gateway == "Bulk Ghana":
+            from posawesome.scripts.bulk_sms_ghana import send_sms
+
+            recipient = sms_gateway_settings.to
+            if sms_gateway_settings.use_customer_phone_number:
+                recipient = phone_number_string
+            send_sms(
+                sms_gateway_settings.api_key,
+                recipient.strip("+"),
+                sms_message,
+                sms_gateway_settings.sender_id,
+                context=doc,
+                url=sms_gateway_settings.url_end_point,
+            )
+        elif sms_gateway_settings.sms_gateway == "Twilio":
+            from posawesome.twilio_sms import send_twilio_sms
+
+            send_twilio_sms(doc.customer, doc, phone_number_string, sms_message)
+        elif sms_gateway_settings.sms_gateway == "Hubtel":
+            from posawesome.hubtel_sms import send_hubtel_sms
+
+            recipient = sms_gateway_settings.to
+            if sms_gateway_settings.use_customer_phone_number:
+                recipient = phone_number_string
+            send_hubtel_sms(doc.customer, doc, recipient, sms_message)
+    else:
+        frappe.msgprint(
+            _("Customer has no mobile number. Please check"),
+            title="Error in Sending SMS",
+            indicator="orange",
+            alert=True,
+        )

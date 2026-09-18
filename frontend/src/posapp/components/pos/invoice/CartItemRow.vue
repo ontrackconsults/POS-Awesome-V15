@@ -404,6 +404,31 @@
 				</v-btn>
 			</td>
 
+			<td
+				v-else-if="
+					column.key === 'custom_hair_stylist_1' ||
+					column.key === 'custom_hair_stylist_2' ||
+					column.key === 'custom_hair_stylist_3'
+				"
+				v-bind="getCellAttrs(column.key, 'text-start')"
+			>
+				<v-autocomplete
+					v-if="item.is_stock_item === 0 || posProfile?.custom_show_service_staff_for_products"
+					v-model="item[column.key]"
+					:items="salesPersons"
+					item-title="sales_person_name"
+					item-value="name"
+					:return-object="false"
+					variant="outlined"
+					density="compact"
+					color="primary"
+					class="pos-themed-input"
+					:label="column.title"
+					clearable
+					hide-details
+				/>
+			</td>
+
 			<!-- Actions -->
 			<td v-else-if="column.key === 'actions'" v-bind="getCellAttrs('actions', 'text-center')">
 				<v-btn
@@ -459,6 +484,10 @@ const props = defineProps({
 	posProfile: {
 		type: Object,
 		default: () => ({}),
+	},
+	salesPersons: {
+		type: Array,
+		default: () => [],
 	},
 	isReturnInvoice: Boolean,
 	invoiceType: String,
@@ -554,6 +583,9 @@ const memoDeps = computed(() => {
 		Array.isArray(props.item.serial_no_selected) ? props.item.serial_no_selected.join("|") : "",
 		props.item.posa_is_offer,
 		props.item.posa_offer_applied,
+		props.item.custom_hair_stylist_1,
+		props.item.custom_hair_stylist_2,
+		props.item.custom_hair_stylist_3,
 		props.item.is_free_item,
 		props.item.price_list_rate,
 		props.isExpanded,
