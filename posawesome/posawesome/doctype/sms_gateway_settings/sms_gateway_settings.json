@@ -18,6 +18,9 @@
   "section_break_yd1wt",
   "url_end_point",
   "api_key",
+  "hubtel_client_id",
+  "hubtel_client_secret",
+  "hubtel_url_end_point",
   "sender_id",
   "to",
   "use_customer_phone_number",
@@ -50,9 +53,10 @@
   },
   {
    "collapsible": 1,
-   "depends_on": "eval:doc.sms_gateway==\"Bulk Ghana\"",
+   "depends_on": "eval:in_list([\"Bulk Ghana\", \"Hubtel\"], doc.sms_gateway)",
    "fieldname": "section_break_yd1wt",
-   "fieldtype": "Section Break"
+   "fieldtype": "Section Break",
+   "label": "Gateway Credentials"
   },
   {
    "default": "{% set company, pdf_link = frappe.db.get_value('Sales Invoice', {'name': custom_sales_invoice}, ['company','custom_pdf_link']) %}\nDear {{ party }},\nYou have an Appointment for:  {{ custom_service_staff | map(attribute='service_item') | join(', ') }} at  on {{ company }}\n{{ scheduled_time }}. We look forward to seeing you on the appointment date.\n{{ frappe.utils.get_url(pdf_link) }}",
@@ -65,7 +69,7 @@
    "fieldname": "sms_gateway",
    "fieldtype": "Select",
    "label": "SMS Gateway",
-   "options": "Twilio\nBulk Ghana"
+   "options": "Twilio\nBulk Ghana\nHubtel"
   },
   {
    "collapsible": 1,
@@ -74,6 +78,7 @@
    "fieldtype": "Section Break"
   },
   {
+   "depends_on": "eval:doc.sms_gateway==\"Bulk Ghana\"",
    "fieldname": "api_key",
    "fieldtype": "Data",
    "label": "API key"
@@ -92,6 +97,7 @@
    "max_height": "300px"
   },
   {
+   "description": "Registered sender ID (max 11 characters, no spaces)",
    "fieldname": "sender_id",
    "fieldtype": "Data",
    "label": "Sender Id"
@@ -101,6 +107,8 @@
    "fieldtype": "Column Break"
   },
   {
+   "depends_on": "eval:doc.sms_gateway==\"Bulk Ghana\"",
+   "description": "Leave blank to use the default Bulk Ghana endpoint",
    "fieldname": "url_end_point",
    "fieldtype": "Data",
    "label": "URL End Point"
@@ -138,12 +146,33 @@
    "fieldname": "use_customer_phone_number",
    "fieldtype": "Check",
    "label": "Use Customer Phone Number"
+  },
+  {
+   "depends_on": "eval:doc.sms_gateway==\"Hubtel\"",
+   "description": "From Hubtel Messaging \u003e Programmable SMS API keys",
+   "fieldname": "hubtel_client_id",
+   "fieldtype": "Data",
+   "label": "Hubtel Client ID"
+  },
+  {
+   "depends_on": "eval:doc.sms_gateway==\"Hubtel\"",
+   "fieldname": "hubtel_client_secret",
+   "fieldtype": "Password",
+   "label": "Hubtel Client Secret"
+  },
+  {
+   "default": "https://smsc.hubtel.com/v1/messages/send",
+   "depends_on": "eval:doc.sms_gateway==\"Hubtel\"",
+   "description": "Leave blank to use https://smsc.hubtel.com/v1/messages/send",
+   "fieldname": "hubtel_url_end_point",
+   "fieldtype": "Data",
+   "label": "Hubtel URL End Point"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-01-13 16:48:59.429279",
+ "modified": "2026-09-19 02:10:00.000000",
  "modified_by": "Administrator",
  "module": "POSAwesome",
  "name": "SMS Gateway Settings",

@@ -1090,6 +1090,12 @@ def notify_customer_via_sms(doc, method):
         elif sms_gateway_settings.sms_gateway == "Twilio":
             from posawesome.twilio_sms import send_twilio_sms
             send_twilio_sms(doc.party, doc, doc.customer_phone_number, sms_message)
+        elif sms_gateway_settings.sms_gateway == "Hubtel":
+            from posawesome.hubtel_sms import send_hubtel_sms
+            phone_number = sms_gateway_settings.to
+            if sms_gateway_settings.use_customer_phone_number:
+                phone_number = doc.customer_phone_number
+            send_hubtel_sms(doc.party, doc, phone_number, sms_message)
 
 
 def notify_customer_via_sms_submit_only(doc, method):
@@ -1117,6 +1123,12 @@ def notify_customer_via_sms_submit_only(doc, method):
             elif sms_gateway_settings.sms_gateway == "Twilio":
                 from posawesome.twilio_sms import send_twilio_sms
                 send_twilio_sms(doc.customer, doc, phone_number_string, sms_message)
+            elif sms_gateway_settings.sms_gateway == "Hubtel":
+                from posawesome.hubtel_sms import send_hubtel_sms
+                phone_number = sms_gateway_settings.to
+                if sms_gateway_settings.use_customer_phone_number:
+                    phone_number = phone_number_string
+                send_hubtel_sms(doc.customer, doc, phone_number, sms_message)
         else:
             frappe.msgprint(
                 _("Customer has no mobile number. Please check"), title="Error in Sending SMS", indicator="orange", alert=True

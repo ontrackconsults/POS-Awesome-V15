@@ -6,6 +6,7 @@ This guide explains how to set up and use the SMS functionality in POSAwesome.
 
 - **Twilio SMS Integration**: Send SMS notifications via Twilio
 - **Bulk Ghana SMS Integration**: Send SMS notifications via Bulk Ghana SMS service
+- **Hubtel SMS Integration**: Send SMS notifications via Hubtel Programmable SMS
 - **WhatsApp Integration**: Send WhatsApp messages via Twilio
 - **Automatic Notifications**: SMS sent automatically on invoice submission and appointment creation
 
@@ -26,6 +27,7 @@ pip install twilio pycountry phonenumbers
 3. Select your SMS Gateway:
     - **Twilio**: For international SMS
     - **Bulk Ghana**: For Ghana-specific SMS
+    - **Hubtel**: For Hubtel Programmable SMS (Ghana)
 
 ### 3. Twilio Configuration
 
@@ -49,7 +51,22 @@ If using Bulk Ghana:
     - **URL End Point**: API endpoint (default: http://clientlogin.bulksmsgh.com/smsapi)
     - **To**: Default recipient number (if not using customer phone number)
 
-### 5. Message Templates
+### 5. Hubtel Configuration
+
+If using Hubtel:
+
+1. Get your API credentials from [Hubtel Messaging](https://hubtel.com/) (Messaging > Manage > Programmable SMS)
+2. Fill in the following fields:
+    - **Hubtel Client ID**: Your Hubtel API Client ID
+    - **Hubtel Client Secret**: Your Hubtel API Client Secret
+    - **Sender Id**: Your registered sender ID (max 11 characters, no spaces)
+    - **Hubtel URL End Point**: API endpoint (default: `https://smsc.hubtel.com/v1/messages/send`)
+    - **To**: Default recipient number (if not using customer phone number)
+    - **Use Customer Phone Number**: Enable to send to the customer's mobile number
+
+Ensure the SMS API account is funded in Hubtel before sending.
+
+### 6. Message Templates
 
 Configure your SMS message templates:
 
@@ -91,6 +108,7 @@ The system uses Jinja2 templates for message customization. Available variables 
 ### Error Messages
 
 - "Missing Twilio SMS Settings": Check Twilio credentials
+- "Missing Hubtel SMS Settings": Check Hubtel Client ID, Client Secret, Sender Id, and recipient number
 - "Customer has no mobile number": Customer record needs mobile number
 - "Failed to send SMS": Check network connection and credentials
 
@@ -107,6 +125,6 @@ To test SMS functionality:
 
 For issues or questions regarding SMS functionality, please check:
 
-1. Twilio/Bulk Ghana documentation
+1. Twilio/Bulk Ghana/Hubtel documentation
 2. Frappe logs for error details
 3. SMS Gateway Settings configuration
