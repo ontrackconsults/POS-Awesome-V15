@@ -25,6 +25,7 @@ SUBMISSION_LEDGER_DOCTYPE = "POS Invoice Submission Ledger"
 
 
 def validate(doc, method):
+    set_naming_series_from_pos_profile(doc)
     validate_shift(doc)
     validate_pos_invoice_item_sale_controls(doc)
     set_patient(doc)
@@ -41,6 +42,7 @@ def before_submit(doc, method):
     # ``before_submit`` runs afterwards, so restore original-tender values at
     # the last mutation point before the submitted document is written.
     preserve_multi_currency_payment_amounts(doc, method)
+    attach_invoice_pdf_link(doc)
     create_appointment(doc)
 
 
@@ -349,6 +351,32 @@ def calc_delivery_charges(doc):
 def apply_tax_inclusive(doc):
     """Mark taxes as inclusive based on POS Profile setting."""
     apply_pos_tax_inclusion_contract(doc)
+
+
+def set_naming_series_from_pos_profile(doc, method=None):
+    if not getattr(doc, "is_pos", 0) or not doc.pos_profile:
+        return
+    if doc.name and not (
+        doc.get("__islocal") or str(doc.name).startswith("new-") or str(doc.name).startswith("New")
+    ):
+        return
+    if not frappe.db.has_column("POS Profile", "custom_naming_series"):
+        return
+    custom_naming_series = frappe.get_cached_value("POS Profile", doc.pos_profile, "custom_naming_series")
+    if custom_naming_series:
+        doc.naming_series = custom_naming_series
+
+
+def attach_invoice_pdf_link(doc, method=None):
+    if not hasattr(doc, "custom_pdf_link") or not doc.name:
+        return
+    try:
+        from posawesome.posawesome.api.posapp import download_pdf
+
+        pdf_link = download_pdf(doc.doctype, doc.name, format="POS SI Receipt VAT")
+        doc.custom_pdf_link = pdf_link.get("message") if isinstance(pdf_link, dict) else pdf_link
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "POS Awesome PDF Link")
 
 
 def validate_shift(doc):

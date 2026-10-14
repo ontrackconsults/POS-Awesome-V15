@@ -91,7 +91,10 @@
 				<!-- Dropdown display -->
 				<template #item="{ props, item }">
 					<v-list-item v-bind="props">
-						<v-list-item-subtitle v-if="item.raw.customer_name !== item.raw.name">
+						<v-list-item-subtitle v-if="item.raw.custom_customer_id">
+							<div>{{ __("ID") }}: {{ item.raw.custom_customer_id }}</div>
+						</v-list-item-subtitle>
+						<v-list-item-subtitle v-else-if="item.raw.customer_name !== item.raw.name">
 							<div>{{ __("ID") }}: {{ item.raw.name }}</div>
 						</v-list-item-subtitle>
 						<v-list-item-subtitle v-if="item.raw.tax_id">
@@ -100,8 +103,11 @@
 						<v-list-item-subtitle v-if="item.raw.email_id">
 							<div>{{ __("Email") }}: {{ item.raw.email_id }}</div>
 						</v-list-item-subtitle>
-						<v-list-item-subtitle v-if="item.raw.mobile_no">
-							<div>{{ __("Mobile No") }}: {{ item.raw.mobile_no }}</div>
+						<v-list-item-subtitle v-if="item.raw.custom_search_mobile_no || item.raw.mobile_no">
+							<div>
+								{{ __("Mobile No") }}:
+								{{ item.raw.custom_search_mobile_no || item.raw.mobile_no }}
+							</div>
 						</v-list-item-subtitle>
 						<v-list-item-subtitle v-if="item.raw.primary_address">
 							<div>{{ __("Primary Address") }}: {{ item.raw.primary_address }}</div>

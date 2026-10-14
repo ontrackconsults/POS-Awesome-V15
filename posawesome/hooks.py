@@ -109,6 +109,7 @@ doc_events = {
         "on_trash": "posawesome.posawesome.api.item_processing.alternates.clear_alternate_item_caches",
     },
     "Sales Invoice": {
+        "autoname": "posawesome.posawesome.api.invoice.set_naming_series_from_pos_profile",
         "validate": "posawesome.posawesome.api.invoice.validate",
         "before_save": "posawesome.posawesome.api.payment_currency.preserve_multi_currency_payment_amounts",
         "before_submit": "posawesome.posawesome.api.invoice.before_submit",

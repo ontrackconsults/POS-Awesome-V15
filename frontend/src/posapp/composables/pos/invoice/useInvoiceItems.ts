@@ -199,11 +199,7 @@ export function useInvoiceItems(invoiceType: Ref<string>) {
 								pos_profile.value?.posa_display_discount_amount
 							)
 								return true;
-							if (
-								col.key?.startsWith("custom_hair_stylist") &&
-								pos_profile.value?.custom_show_service_staff_for_products
-							)
-								return true;
+							if (col.key?.startsWith("custom_hair_stylist")) return true;
 							return false;
 						})
 						.map((col) => col.key),

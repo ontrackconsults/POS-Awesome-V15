@@ -25,6 +25,71 @@ def _assert_customer_write_allowed(pos_profile_doc=None, company=None):
     return assert_pos_profile_write_allowed(pos_profile_doc, company=company)
 
 
+CUSTOMER_NAME_PART_FIELDS = (
+    "custom_customer_first_name",
+    "custom_customer_last_name",
+    "custom_customer_name",
+)
+CUSTOMER_ONTRACK_FIELDS = CUSTOMER_NAME_PART_FIELDS + (
+    "custom_customer_id",
+    "custom_country_name",
+    "custom_country_code",
+    "custom_search_mobile_no",
+)
+
+
+def _optional_customer_fields(*fieldnames):
+    return [fieldname for fieldname in fieldnames if frappe.db.has_column("Customer", fieldname)]
+
+
+def _compose_customer_name(first_name=None, last_name=None, custom_name=None, fallback=None):
+    composed = cstr(custom_name or "").strip()
+    if composed:
+        return composed
+    parts = f"{cstr(first_name or '').strip()} {cstr(last_name or '').strip()}".strip()
+    return parts or cstr(fallback or "").strip()
+
+
+def _apply_customer_name_parts(
+    customer,
+    first_name=None,
+    last_name=None,
+    custom_name=None,
+    fallback_name=None,
+):
+    composed = _compose_customer_name(first_name, last_name, custom_name, fallback_name)
+    if first_name is not None and hasattr(customer, "custom_customer_first_name"):
+        customer.custom_customer_first_name = cstr(first_name or "").strip()
+    if last_name is not None and hasattr(customer, "custom_customer_last_name"):
+        customer.custom_customer_last_name = cstr(last_name or "").strip()
+    if (first_name is not None or last_name is not None or custom_name is not None) and hasattr(
+        customer, "custom_customer_name"
+    ):
+        customer.custom_customer_name = composed
+    if composed:
+        customer.customer_name = composed
+    return composed
+
+
+def _apply_ontrack_customer_fields(
+    customer,
+    custom_customer_id=None,
+    custom_country_name=None,
+    custom_country_code=None,
+    mobile_no=None,
+):
+    if custom_customer_id is not None and hasattr(customer, "custom_customer_id"):
+        customer.custom_customer_id = custom_customer_id or ""
+    if custom_country_name is not None and hasattr(customer, "custom_country_name"):
+        customer.custom_country_name = custom_country_name or ""
+    if custom_country_code is not None and hasattr(customer, "custom_country_code"):
+        customer.custom_country_code = custom_country_code or ""
+    if mobile_no is not None:
+        if hasattr(customer, "custom_search_mobile_no"):
+            customer.custom_search_mobile_no = mobile_no or ""
+        customer.mobile_no = str(mobile_no).lstrip("0") if mobile_no else ""
+
+
 def _mobile_search_keys(value):
     digits = "".join(character for character in cstr(value or "") if character.isdigit())
     if not digits:
@@ -72,6 +137,10 @@ def _customer_matches_search(customer, search_term):
             customer.get("mobile_no"),
             customer.get("email_id"),
             customer.get("tax_id"),
+            customer.get("custom_customer_id"),
+            customer.get("custom_search_mobile_no"),
+            customer.get("custom_customer_first_name"),
+            customer.get("custom_customer_last_name"),
             "".join(
                 character
                 for character in cstr(customer.get("mobile_no") or "")
@@ -81,7 +150,11 @@ def _customer_matches_search(customer, search_term):
         )
     )
     text_match = all(part in search_text for part in search_parts)
-    return text_match or _mobile_matches_search(customer.get("mobile_no"), search_term)
+    return (
+        text_match
+        or _mobile_matches_search(customer.get("mobile_no"), search_term)
+        or _mobile_matches_search(customer.get("custom_search_mobile_no"), search_term)
+    )
 
 
 def _find_duplicate_customer_records(
@@ -269,6 +342,7 @@ def get_customer_names(pos_profile, limit=None, offset=None, start_after=None, m
                 "customer_group",
                 "territory",
                 "primary_address",
+                *_optional_customer_fields(*CUSTOMER_ONTRACK_FIELDS),
             ],
             order_by="name",
             limit_start=None if start_after else offset,
@@ -311,6 +385,14 @@ def search_customers(pos_profile, search_term, limit=200):
         ["mobile_no", "like", f"%{mobile_fragment}%"],
         ["tax_id", "like", f"%{tax_fragment}%"],
     ]
+    for fieldname in _optional_customer_fields(
+        "custom_customer_id",
+        "custom_search_mobile_no",
+        "custom_customer_first_name",
+        "custom_customer_last_name",
+        "custom_customer_name",
+    ):
+        or_filters.append([fieldname, "like", f"%{search_term}%"])
 
     candidates = frappe.get_all(
         "Customer",
@@ -328,6 +410,7 @@ def search_customers(pos_profile, search_term, limit=200):
             "customer_group",
             "territory",
             "primary_address",
+            *_optional_customer_fields(*CUSTOMER_ONTRACK_FIELDS),
         ],
         order_by="name",
         limit_page_length=max(result_limit * 5, 500),
@@ -373,6 +456,13 @@ def get_customer_info(customer=None, company=None):
     res["posa_discount"] = customer.posa_discount
     res["name"] = customer.name
     res["customer_name"] = customer.customer_name
+    res["custom_customer_first_name"] = getattr(customer, "custom_customer_first_name", None) or ""
+    res["custom_customer_last_name"] = getattr(customer, "custom_customer_last_name", None) or ""
+    res["custom_customer_name"] = getattr(customer, "custom_customer_name", None) or ""
+    res["custom_customer_id"] = getattr(customer, "custom_customer_id", None) or ""
+    res["custom_country_name"] = getattr(customer, "custom_country_name", None) or ""
+    res["custom_country_code"] = getattr(customer, "custom_country_code", None) or ""
+    res["custom_search_mobile_no"] = getattr(customer, "custom_search_mobile_no", None) or ""
     res["customer_group_price_list"] = frappe.get_value(
         "Customer Group", customer.customer_group, "default_price_list"
     )
@@ -457,9 +547,21 @@ def create_customer(
     address_line1=None,
     city=None,
     country=None,
+    custom_customer_first_name=None,
+    custom_customer_last_name=None,
+    custom_customer_name=None,
+    custom_customer_id=None,
+    custom_country_name=None,
+    custom_country_code=None,
 ):
     pos_profile_doc_obj = _assert_customer_write_allowed(pos_profile_doc, company=company)
     pos_profile = pos_profile_doc_obj.as_dict() if pos_profile_doc_obj else {}
+    customer_name = _compose_customer_name(
+        custom_customer_first_name,
+        custom_customer_last_name,
+        custom_customer_name,
+        customer_name,
+    )
 
     # Format birthday to MySQL compatible format (YYYY-MM-DD) if provided
     formatted_birthday = None
@@ -516,6 +618,20 @@ def create_customer(
             else:
                 customer.territory = "All Territories"
 
+            _apply_customer_name_parts(
+                customer,
+                custom_customer_first_name,
+                custom_customer_last_name,
+                custom_customer_name,
+                customer_name,
+            )
+            _apply_ontrack_customer_fields(
+                customer,
+                custom_customer_id=custom_customer_id,
+                custom_country_name=custom_country_name,
+                custom_country_code=custom_country_code,
+                mobile_no=mobile_no,
+            )
             customer.save()
 
             if address_line1 or city:
@@ -537,9 +653,21 @@ def create_customer(
             return customer
     elif method == "update":
         customer_doc = frappe.get_doc("Customer", customer_id)
-        customer_doc.customer_name = customer_name
+        _apply_customer_name_parts(
+            customer_doc,
+            custom_customer_first_name,
+            custom_customer_last_name,
+            custom_customer_name,
+            customer_name,
+        )
+        _apply_ontrack_customer_fields(
+            customer_doc,
+            custom_customer_id=custom_customer_id,
+            custom_country_name=custom_country_name,
+            custom_country_code=custom_country_code,
+            mobile_no=mobile_no,
+        )
         customer_doc.tax_id = tax_id
-        customer_doc.mobile_no = mobile_no
         customer_doc.email_id = email_id
         customer_doc.posa_referral_code = referral_code
         customer_doc.posa_birthday = formatted_birthday
