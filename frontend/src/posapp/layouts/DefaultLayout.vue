@@ -39,6 +39,17 @@
 				@open-customer-display="handleOpenCustomerDisplay"
 				@refresh-cache-usage="handleRefreshCacheUsage"
 				@update-after-delete="handleUpdateAfterDelete"
+				@change-pos-profile="handleChangePosProfile"
+			/>
+			<SwitchPosProfileDialog
+				v-model="showPosProfileDialog"
+				:selected-pos-profile="selectedPosProfile"
+				:available-pos-profiles="availablePosProfiles"
+				:loading-pos-profiles="loadingPosProfiles"
+				:current-profile-name="currentProfileName"
+				@update:selected-pos-profile="selectedPosProfile = $event"
+				@close="closePosProfileDialog"
+				@switch="switchPosProfile"
 			/>
 			<v-snackbar
 				v-model="bootstrapSnackbarVisible"
@@ -84,11 +95,13 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch, getCurrentInstance } from "vue";
 // Note paths updated to be relative to layouts/ directory
 import Navbar from "../components/Navbar.vue";
+import SwitchPosProfileDialog from "../components/navbar/SwitchPosProfileDialog.vue";
 import ClosingDialog from "../components/pos/shell/ClosingDialog.vue";
 import AppLoadingOverlay from "../components/ui/LoadingOverlay.vue";
 import UpdatePrompt from "../components/ui/UpdatePrompt.vue";
 import { useLoading } from "../composables/core/useLoading.js";
 import { usePosShift } from "../composables/pos/shared/usePosShift";
+import { useSwitchPosProfile } from "../composables/pos/shared/useSwitchPosProfile";
 import {
 	clearSourceRelease,
 	initLoadingSources,
@@ -220,6 +233,16 @@ const globalLoading = loadingApi?.overlayVisible || ref(false);
 const getScopeState =
 	typeof loadingApi?.getScopeState === "function" ? loadingApi.getScopeState : createFallbackLoadingScope;
 const { get_closing_data } = usePosShift();
+const {
+	showPosProfileDialog,
+	selectedPosProfile,
+	availablePosProfiles,
+	loadingPosProfiles,
+	currentProfileName,
+	handleChangePosProfile,
+	closePosProfileDialog,
+	switchPosProfile,
+} = useSwitchPosProfile();
 const syncStore = useSyncStore();
 const customersStore = useCustomersStore();
 const itemsStore = useItemsStore();

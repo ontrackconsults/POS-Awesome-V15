@@ -981,3 +981,34 @@ def log_client_error(payload=None):
             title="POS Client Error Logging Failure",
         )
         return {"ok": False}
+
+
+@frappe.whitelist()
+def get_available_pos_profiles(company=None, currency=None):
+    """Return enabled POS Profiles (branches) assigned to the current user."""
+    user = cstr(getattr(frappe.session, "user", "")).strip()
+    if not user or user == "Guest":
+        frappe.throw(frappe._("Sign in to access POS data."), frappe.PermissionError)
+
+    conditions = ["p.disabled = 0", "u.user = %s"]
+    values = [user]
+    company = cstr(company).strip()
+    currency = cstr(currency).strip()
+    if company:
+        conditions.append("p.company = %s")
+        values.append(company)
+    if currency:
+        conditions.append("p.currency = %s")
+        values.append(currency)
+
+    return frappe.db.sql(
+        """
+        SELECT DISTINCT p.name, p.company, p.currency
+        FROM `tabPOS Profile` p
+        INNER JOIN `tabPOS Profile User` u ON u.parent = p.name
+        WHERE {where_clause}
+        ORDER BY p.name
+        """.format(where_clause=" AND ".join(conditions)),
+        tuple(values),
+        as_dict=1,
+    )

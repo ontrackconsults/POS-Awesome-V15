@@ -126,6 +126,41 @@
 
 				<div :class="['profile-section', isRtl ? 'rtl-profile-section' : 'ltr-profile-section']">
 					<v-chip
+						v-if="displayName"
+						variant="outlined"
+						:class="[
+							'profile-chip branch-chip pos-themed-card clickable-chip',
+							isRtl ? 'rtl-profile-chip' : 'ltr-profile-chip',
+						]"
+						data-test="branch-chip"
+						tabindex="0"
+						role="button"
+						:aria-label="__('Switch Branch')"
+						@click="$emit('change-pos-profile')"
+						@keydown.enter="$emit('change-pos-profile')"
+					>
+						<v-icon
+							:start="!isRtl"
+							:end="isRtl"
+							:class="['pos-text-primary', isRtl ? 'rtl-profile-icon' : 'ltr-profile-icon']"
+						>
+							mdi-storefront-outline
+						</v-icon>
+						<span
+							:class="[
+								'profile-chip__content',
+								isRtl ? 'rtl-profile-text' : 'ltr-profile-text',
+							]"
+						>
+							<span class="pos-text-primary profile-chip__title">
+								{{ displayName }}
+							</span>
+							<span class="profile-chip__meta">
+								{{ __("Switch Branch") }}
+							</span>
+						</span>
+					</v-chip>
+					<v-chip
 						v-if="cashierChipLabel"
 						variant="outlined"
 						:class="[
@@ -343,14 +378,6 @@ export default {
 		},
 
 		cashierChipMeta() {
-			if (!this.cashierName) {
-				return "";
-			}
-
-			if (this.displayName && this.displayName !== this.cashierName) {
-				return this.displayName;
-			}
-
 			return "";
 		},
 
@@ -404,7 +431,13 @@ export default {
 			}
 		},
 	},
-	emits: ["nav-click", "go-desk", "show-offline-invoices", "open-employee-switch"],
+	emits: [
+		"nav-click",
+		"go-desk",
+		"show-offline-invoices",
+		"open-employee-switch",
+		"change-pos-profile",
+	],
 };
 </script>
 
@@ -768,6 +801,9 @@ export default {
 .profile-section {
 	margin: 0;
 	order: 2;
+	display: flex;
+	align-items: center;
+	gap: 8px;
 	/* Second to last in actions section */
 }
 

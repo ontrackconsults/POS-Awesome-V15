@@ -108,16 +108,17 @@ describe("NavbarMenu action surfaces", () => {
 			(wrapper.vm as any).quickActions.map((action: any) => action.id),
 		).toEqual([
 			"switch-cashier",
+			"switch-branch",
 			"lock-screen",
 			"print-last-invoice",
 			"share-last-invoice",
 			"sync-offline-sales",
 			"close-shift",
 		]);
-		expect((wrapper.vm as any).quickActions[3].label).toBe(
+		expect((wrapper.vm as any).quickActions[4].label).toBe(
 			"Share Last Invoice",
 		);
-		expect((wrapper.vm as any).quickActions[4].label).toBe(
+		expect((wrapper.vm as any).quickActions[5].label).toBe(
 			"Sync Offline Sales",
 		);
 
@@ -152,7 +153,7 @@ describe("NavbarMenu action surfaces", () => {
 		await flushPromises();
 
 		const actions = (wrapper.vm as any).quickActions;
-		expect(actions.map((action: any) => action.id).slice(2, 4)).toEqual([
+		expect(actions.map((action: any) => action.id).slice(3, 5)).toEqual([
 			"print-last-invoice",
 			"share-last-invoice",
 		]);

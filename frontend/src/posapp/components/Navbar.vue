@@ -17,6 +17,7 @@
 			@go-desk="goDesk"
 			@show-offline-invoices="showOfflineInvoices = true"
 			@open-employee-switch="openEmployeeSwitch"
+			@change-pos-profile="openSwitchPosProfile"
 		>
 			<!-- Slot for status indicator -->
 			<template #status-indicator>
@@ -81,6 +82,7 @@
 					@close-shift="openCloseShift"
 					@sync-invoices="syncPendingInvoices"
 					@open-employee-switch="openEmployeeSwitch"
+					@change-pos-profile="openSwitchPosProfile"
 					@lock-pos="lockPosScreen"
 					@share-last-invoice="$emit('share-last-invoice')"
 					@open-customer-display="$emit('open-customer-display')"
@@ -687,6 +689,9 @@ export default {
 		openEmployeeSwitch() {
 			this.employeeStore.openEmployeeSwitch();
 		},
+		openSwitchPosProfile() {
+			this.$emit("change-pos-profile");
+		},
 		setupTerminalSecurityChannel() {
 			if (typeof window === "undefined" || typeof window.BroadcastChannel !== "function") {
 				return;
@@ -1206,6 +1211,7 @@ export default {
 		"refresh-cache-usage",
 		"update-after-delete",
 		"navbar-updated",
+		"change-pos-profile",
 	],
 };
 </script>

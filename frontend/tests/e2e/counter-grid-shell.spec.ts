@@ -381,6 +381,7 @@ test.describe("Counter Grid shell", () => {
 		await page.getByRole("button", { name: "Open actions menu" }).click();
 		for (const action of [
 			"switch-cashier",
+			"switch-branch",
 			"lock-screen",
 			"sync-offline-sales",
 			"close-shift",

@@ -405,6 +405,14 @@ export default {
 					handler: "openEmployeeSwitch",
 				},
 				{
+					id: "switch-branch",
+					label: __("Switch Branch"),
+					subtitle: this.posProfile?.name || __("Change POS Profile"),
+					icon: "mdi-storefront-outline",
+					tone: "primary",
+					handler: "openSwitchPosProfile",
+				},
+				{
 					id: "lock-screen",
 					label: __("Lock Screen"),
 					subtitle: __("Pause terminal until next cashier"),
@@ -630,6 +638,10 @@ export default {
 				case "openEmployeeSwitch":
 					this.closeMenu();
 					this.$emit("open-employee-switch");
+					break;
+				case "openSwitchPosProfile":
+					this.closeMenu();
+					this.$emit("change-pos-profile");
 					break;
 				case "lockPos":
 					this.closeMenu();
@@ -866,6 +878,7 @@ export default {
 		"close-shift",
 		"sync-invoices",
 		"open-employee-switch",
+		"change-pos-profile",
 		"lock-pos",
 		"share-last-invoice",
 		"open-customer-display",

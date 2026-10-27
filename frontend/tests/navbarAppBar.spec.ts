@@ -93,6 +93,7 @@ describe("NavbarAppBar", () => {
 		});
 
 		expect(wrapper.findAll('[data-test="cashier-chip"]')).toHaveLength(1);
+		expect(wrapper.findAll('[data-test="branch-chip"]')).toHaveLength(1);
 		expect(
 			wrapper.find('[data-test="profile-chip-secondary"]').exists(),
 		).toBe(false);
