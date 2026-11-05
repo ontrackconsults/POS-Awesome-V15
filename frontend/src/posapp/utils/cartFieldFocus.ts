@@ -7,6 +7,9 @@ export type CartGridColumnKey =
 	| "discount_amount"
 	| "rate"
 	| "amount"
+	| "custom_hair_stylist_1"
+	| "custom_hair_stylist_2"
+	| "custom_hair_stylist_3"
 	| "posa_is_offer"
 	| "actions"
 	| "data-table-expand";
@@ -41,6 +44,12 @@ const FIELD_SELECTORS: Record<CartGridColumnKey, string> = {
 		'[data-column-key="discount_percentage"] .posa-cart-table__editor-display',
 	discount_amount:
 		'[data-column-key="discount_amount"] .posa-cart-table__editor-display',
+	custom_hair_stylist_1:
+		'[data-column-key="custom_hair_stylist_1"] .posa-cart-staff-trigger',
+	custom_hair_stylist_2:
+		'[data-column-key="custom_hair_stylist_2"] .posa-cart-staff-trigger',
+	custom_hair_stylist_3:
+		'[data-column-key="custom_hair_stylist_3"] .posa-cart-staff-trigger',
 	posa_is_offer: '[data-column-key="posa_is_offer"] button',
 	actions: '[data-column-key="actions"] button',
 	"data-table-expand": '[data-column-key="data-table-expand"] button',
@@ -55,6 +64,9 @@ export const CART_GRID_NAVIGABLE_COLUMNS: CartGridColumnKey[] = [
 	"discount_amount",
 	"rate",
 	"amount",
+	"custom_hair_stylist_1",
+	"custom_hair_stylist_2",
+	"custom_hair_stylist_3",
 	"posa_is_offer",
 	"actions",
 	"data-table-expand",
@@ -85,7 +97,7 @@ export const shouldDelegateCartGridKeyToEditor = (
 	modifiers: { shiftKey?: boolean } = {},
 ) =>
 	target instanceof Element &&
-	Boolean(target.closest(".uom-select")) &&
+	Boolean(target.closest(".uom-select, .posa-cart-staff-search, .posa-cart-staff-menu")) &&
 	!(key === "Enter" && modifiers.shiftKey) &&
 	["ArrowDown", "ArrowUp", "Enter", " ", "Escape"].includes(key);
 

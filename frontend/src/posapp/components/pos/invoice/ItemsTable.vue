@@ -91,7 +91,7 @@
 					@toggle-expand="openItemHistory(item)"
 					@open-batch-serial="openBatchSerialSelector"
 					@remove-item="removeItem"
-					@click="handleRowClick($event, item)"
+					@row-click="handleRowClick($event, item)"
 				/>
 			</template>
 		</v-data-table-virtual>
@@ -114,6 +114,7 @@
 			:invoice-doc="invoice_doc"
 			:hide-qty-decimals="hide_qty_decimals"
 			:expanded-content-classes="expandedContentClasses"
+			:sales-persons="salesPersons"
 			:display-currency="displayCurrency"
 			:format-float="memoizedFormatFloat"
 			:format-currency="memoizedFormatCurrency"
@@ -1007,11 +1008,8 @@ const handleDiscountAmountUpdate = (item: any, newDiscount: any) => {
 	props.calcPrices(item, newDiscount, { target: { id: "discount_amount" } });
 };
 
-const handleRowClick = (event: any, item: any) => {
+const handleRowClick = (_event: any, item: any) => {
 	rememberSelectedRow(getItemIndex(item));
-	if (isEditableElement(event.target as HTMLElement)) {
-		return;
-	}
 	openItemHistory(item);
 };
 

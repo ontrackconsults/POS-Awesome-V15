@@ -598,11 +598,13 @@ export default {
 				);
 
 				if (closingData.message) {
+					const closingShift =
+						closingData.message.closing_shift || closingData.message;
 					// Step 3: Submit the closing shift
 					await frappe.call(
 						"posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.submit_closing_shift",
 						{
-							closing_shift: JSON.stringify(closingData.message),
+							closing_shift: JSON.stringify(closingShift),
 						}
 					);
 

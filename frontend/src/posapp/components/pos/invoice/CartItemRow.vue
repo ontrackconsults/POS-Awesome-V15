@@ -10,6 +10,7 @@
 		role="row"
 		:aria-selected="activeRow ? 'true' : 'false'"
 		v-memo="memoDeps"
+		@click="onRowClick"
 	>
 		<template v-for="column in visibleColumns" :key="column.key">
 			<!-- Item Name Column -->
@@ -411,21 +412,18 @@
 					column.key === 'custom_hair_stylist_3'
 				"
 				v-bind="getCellAttrs(column.key, 'text-start')"
+				data-posa-row-control="service-staff"
+				@click.stop
+				@mousedown.stop
+				@pointerdown.stop
 			>
-				<v-autocomplete
-					v-if="item.is_stock_item === 0 || posProfile?.custom_show_service_staff_for_products"
-					v-model="item[column.key]"
-					:items="salesPersons"
-					item-title="sales_person_name"
-					item-value="name"
-					:return-object="false"
-					variant="outlined"
-					density="compact"
-					color="primary"
-					class="pos-themed-input"
+				<CartStaffSelect
+					v-if="item.is_stock_item == 0 || posProfile?.custom_show_service_staff_for_products"
+					:model-value="item[column.key]"
+					:sales-persons="salesPersons"
 					:label="column.title"
-					clearable
-					hide-details
+					:required="column.key === 'custom_hair_stylist_1' && item.is_stock_item == 0"
+					@update:model-value="item[column.key] = $event"
 				/>
 			</td>
 
@@ -467,6 +465,7 @@ import { computed, nextTick, ref, watch } from "vue";
 import { getCartGridCellId, getCartGridRowId } from "../../../utils/cartFieldFocus";
 import { normalizeCartEditQuantity } from "../../../utils/cartQuantity";
 import { getItemLossRisk, resolveSaleFloorPolicy } from "../../../utils/lossPrevention";
+import CartStaffSelect from "./CartStaffSelect.vue";
 
 defineOptions({
 	name: "CartItemRow",
@@ -533,6 +532,7 @@ const emit = defineEmits([
 	"toggle-expand",
 	"open-batch-serial",
 	"remove-item",
+	"row-click",
 ]);
 
 const __ = window.__ || ((text) => text);
@@ -586,6 +586,9 @@ const memoDeps = computed(() => {
 		props.item.custom_hair_stylist_1,
 		props.item.custom_hair_stylist_2,
 		props.item.custom_hair_stylist_3,
+		Array.isArray(props.salesPersons)
+			? props.salesPersons.map((person) => person?.name || person?.value || "").join("|")
+			: "",
 		props.item.is_free_item,
 		props.item.price_list_rate,
 		props.isExpanded,
@@ -643,6 +646,32 @@ const rowClasses = computed(() => ({
 
 function isKeyboardCellActive(key) {
 	return props.activeRow && props.keyboardMode === "cell" && props.activeCellKey === key;
+}
+
+function isRowControlEvent(event) {
+	const path = typeof event.composedPath === "function" ? event.composedPath() : [event.target];
+	return path.some((node) => {
+		if (!(node instanceof Element)) {
+			return false;
+		}
+		if (
+			node.closest(
+				"[data-posa-row-control], .posa-cart-staff-trigger, .posa-cart-staff-menu, .v-field, .v-input, .v-autocomplete, .v-select, .v-overlay, .v-list-item, .v-btn, .posa-cart-table__editor-box, .posa-cart-table__qty-counter, .posa-cart-table__qty-input-shell",
+			)
+		) {
+			return true;
+		}
+		const columnKey = node.closest("[data-column-key]")?.getAttribute("data-column-key") || "";
+		return columnKey.startsWith("custom_hair_stylist");
+	});
+}
+
+function onRowClick(event) {
+	if (isRowControlEvent(event)) {
+		event.stopPropagation();
+		return;
+	}
+	emit("row-click", event);
 }
 
 function getCellAttrs(key, baseClass = "") {

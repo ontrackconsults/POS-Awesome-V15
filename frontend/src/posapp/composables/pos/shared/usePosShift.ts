@@ -69,7 +69,7 @@ export function buildSkippedClosingInvoicesPrompt(
 		.join(" ");
 }
 
-function normalizeClosingShiftPreparationResponse(
+export function normalizeClosingShiftPreparationResponse(
 	payload: any,
 ): ClosingShiftPreparationResponse {
 	if (payload?.closing_shift || payload?.skipped_printed_invoices) {

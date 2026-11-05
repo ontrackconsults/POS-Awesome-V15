@@ -78,9 +78,22 @@ describe("useSwitchPosProfile", () => {
 				};
 			}
 			if (name?.includes("make_closing_shift_from_opening")) {
-				return { message: { name: "CLOSING-1" } };
+				return {
+					message: {
+						closing_shift: {
+							doctype: "POS Closing Shift",
+							name: "CLOSING-1",
+							pos_opening_shift: "SHIFT-1",
+						},
+						skipped_printed_invoices: [],
+					},
+				};
 			}
 			if (name?.includes("submit_closing_shift")) {
+				expect(JSON.parse(args.closing_shift)).toMatchObject({
+					doctype: "POS Closing Shift",
+					name: "CLOSING-1",
+				});
 				return { message: { name: "CLOSING-1" } };
 			}
 			if (name?.includes("create_opening_voucher")) {

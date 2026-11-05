@@ -276,9 +276,27 @@ def make_closing_shift_from_opening(opening_shift):
     }
 
 
+def parse_closing_shift_payload(closing_shift):
+    if isinstance(closing_shift, str):
+        closing_shift = json.loads(closing_shift)
+
+    if isinstance(closing_shift, dict) and not closing_shift.get("doctype") and closing_shift.get(
+        "closing_shift"
+    ):
+        closing_shift = closing_shift.get("closing_shift")
+        if isinstance(closing_shift, str):
+            closing_shift = json.loads(closing_shift)
+
+    if not isinstance(closing_shift, dict):
+        frappe.throw(_("Invalid closing shift payload"))
+
+    closing_shift.setdefault("doctype", "POS Closing Shift")
+    return closing_shift
+
+
 @frappe.whitelist()
 def submit_closing_shift(closing_shift):
-    closing_shift = json.loads(closing_shift)
+    closing_shift = parse_closing_shift_payload(closing_shift)
     closing_shift_doc = frappe.get_doc(closing_shift)
     closing_shift_doc.flags.ignore_permissions = True
     normalize_pos_payment_references(closing_shift_doc)

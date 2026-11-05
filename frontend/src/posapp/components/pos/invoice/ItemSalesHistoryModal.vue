@@ -282,6 +282,7 @@
 							:invoice_doc="invoiceDoc"
 							:hide_qty_decimals="hideQtyDecimals"
 							:expanded-content-classes="expandedContentClasses"
+							:sales-persons="salesPersons"
 							:format-float="formatFloat"
 							:format-currency="formatCurrency"
 							:currency-symbol="currencySymbol"
@@ -419,6 +420,7 @@ interface Props {
 	invoiceDoc?: any;
 	hideQtyDecimals?: boolean;
 	expandedContentClasses?: string | any[] | Record<string, any>;
+	salesPersons?: any[];
 	displayCurrency?: string;
 	isDarkTheme?: boolean;
 	formatFloat: (_val: any, _precision?: number) => string;
@@ -444,6 +446,7 @@ const props = withDefaults(defineProps<Props>(), {
 	invoiceDoc: null,
 	hideQtyDecimals: false,
 	expandedContentClasses: "",
+	salesPersons: () => [],
 	displayCurrency: "",
 });
 

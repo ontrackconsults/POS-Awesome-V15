@@ -21,6 +21,19 @@ export async function validate(context: any) {
 		}
 	}
 
+	if (Array.isArray(context.items) && context.items.length) {
+		const missingServiceStaff = context.items.filter(
+			(item: any) => item && item.is_stock_item == 0 && !item.custom_hair_stylist_1,
+		);
+		if (missingServiceStaff.length) {
+			context.toastStore.show({
+				title: __("Service Staff 1 is mandatory for all service items (non-stock)"),
+				color: "error",
+			});
+			return false;
+		}
+	}
+
 	// For all returns, check if amounts are negative
 	if (context.isReturnInvoice) {
 		// Check if quantities are negative

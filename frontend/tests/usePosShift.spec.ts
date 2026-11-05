@@ -29,6 +29,7 @@ vi.mock("../src/offline/bootstrapSnapshot", () => ({
 
 import {
 	buildSkippedClosingInvoicesPrompt,
+	normalizeClosingShiftPreparationResponse,
 	usePosShift,
 } from "../src/posapp/composables/pos/shared/usePosShift";
 import { useInvoiceStore } from "../src/posapp/stores/invoiceStore";
@@ -51,6 +52,30 @@ describe("usePosShift closing warnings", () => {
 
 	afterEach(() => {
 		vi.restoreAllMocks();
+	});
+
+	it("unwraps wrapped closing-shift payloads before submit", () => {
+		expect(
+			normalizeClosingShiftPreparationResponse({
+				closing_shift: { doctype: "POS Closing Shift", name: "POS-CLOSE-1" },
+				skipped_printed_invoices: [{ invoice: "SINV-0001" }],
+			}),
+		).toEqual({
+			closing_shift: { doctype: "POS Closing Shift", name: "POS-CLOSE-1" },
+			skipped_printed_invoices: [{ invoice: "SINV-0001" }],
+		});
+		expect(
+			normalizeClosingShiftPreparationResponse({
+				doctype: "POS Closing Shift",
+				name: "POS-CLOSE-2",
+			}),
+		).toEqual({
+			closing_shift: {
+				doctype: "POS Closing Shift",
+				name: "POS-CLOSE-2",
+			},
+			skipped_printed_invoices: [],
+		});
 	});
 
 	it("includes invoice and cancelled return reference details in the warning prompt", () => {

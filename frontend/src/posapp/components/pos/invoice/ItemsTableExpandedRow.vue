@@ -392,6 +392,76 @@
 					</div>
 				</div>
 
+				<!-- Service Staff Section -->
+				<div
+					class="posa-form-section"
+					v-if="item.is_stock_item == 0 || pos_profile?.custom_show_service_staff_for_products"
+				>
+					<div class="posa-section-header">
+						<v-icon size="small" class="section-icon">mdi-account-group</v-icon>
+						<span class="posa-section-title">{{ __("Service Staff") }}</span>
+					</div>
+					<div class="posa-form-row">
+						<div class="posa-form-field">
+							<v-autocomplete
+								v-model="item.custom_hair_stylist_1"
+								:items="salesPersons"
+								item-title="sales_person_name"
+								item-value="name"
+								:return-object="false"
+								variant="outlined"
+								density="compact"
+								color="primary"
+								class="pos-themed-input"
+								:label="frappe._('Service Staff 1')"
+								clearable
+								auto-select-first
+								hide-details
+								:menu-props="{ zIndex: 2500 }"
+								prepend-inner-icon="mdi-account"
+							/>
+						</div>
+						<div class="posa-form-field">
+							<v-autocomplete
+								v-model="item.custom_hair_stylist_2"
+								:items="salesPersons"
+								item-title="sales_person_name"
+								item-value="name"
+								:return-object="false"
+								variant="outlined"
+								density="compact"
+								color="primary"
+								class="pos-themed-input"
+								:label="frappe._('Service Staff 2')"
+								clearable
+								auto-select-first
+								hide-details
+								:menu-props="{ zIndex: 2500 }"
+								prepend-inner-icon="mdi-account"
+							/>
+						</div>
+						<div class="posa-form-field">
+							<v-autocomplete
+								v-model="item.custom_hair_stylist_3"
+								:items="salesPersons"
+								item-title="sales_person_name"
+								item-value="name"
+								:return-object="false"
+								variant="outlined"
+								density="compact"
+								color="primary"
+								class="pos-themed-input"
+								:label="frappe._('Service Staff 3')"
+								clearable
+								auto-select-first
+								hide-details
+								:menu-props="{ zIndex: 2500 }"
+								prepend-inner-icon="mdi-account"
+							/>
+						</div>
+					</div>
+				</div>
+
 				<!-- Delivery Date Section -->
 				<div
 					class="posa-form-section"
@@ -445,6 +515,7 @@ interface Props {
 	invoice_doc?: InvoiceDoc | any;
 	hide_qty_decimals: boolean;
 	expandedContentClasses: any;
+	salesPersons?: any[];
 
 	// Formatters
 	formatFloat: (_val: any, _precision?: number) => string;
@@ -465,6 +536,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
 	panelOnly: false,
+	salesPersons: () => [],
 });
 
 const emit = defineEmits<{

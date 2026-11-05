@@ -191,6 +191,20 @@ describe("focusCartItemField", () => {
 		);
 	});
 
+	it("includes visible service staff columns in cart keyboard navigation", () => {
+		expect(
+			getNavigableCartColumnKeys([
+				{ key: "item_name" },
+				{ key: "qty" },
+				{ key: "custom_hair_stylist_1" },
+				{ key: "actions" },
+			]),
+		).toEqual(["item_name", "qty", "custom_hair_stylist_1", "actions"]);
+		expect(CART_GRID_DIRECT_EDIT_COLUMNS).not.toContain(
+			"custom_hair_stylist_1",
+		);
+	});
+
 	it("leaves UOM menu keys to the active select editor", () => {
 		const target = document.createElement("input");
 		const editor = document.createElement("div");
@@ -209,6 +223,18 @@ describe("focusCartItemField", () => {
 		expect(shouldDelegateCartGridKeyToEditor(target, "ArrowRight")).toBe(
 			false,
 		);
+	});
+
+	it("leaves service staff menu keys to the picker", () => {
+		const target = document.createElement("input");
+		const menu = document.createElement("div");
+		menu.className = "posa-cart-staff-menu";
+		menu.appendChild(target);
+
+		expect(shouldDelegateCartGridKeyToEditor(target, "ArrowDown")).toBe(
+			true,
+		);
+		expect(shouldDelegateCartGridKeyToEditor(target, "Escape")).toBe(true);
 	});
 
 	it("scrolls a virtualized offscreen row before resolving its focus target", async () => {

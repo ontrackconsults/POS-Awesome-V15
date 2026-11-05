@@ -36,6 +36,9 @@ const STANDARD_COLUMN_WIDTHS: Record<string, ColumnWidthConfig> = {
 	price_list_rate: { min: 105, max: 118, ratio: 0.11 },
 	actions: { min: 68, max: 76, ratio: 0.07 },
 	posa_is_offer: { min: 70, max: 90, ratio: 0.06 },
+	custom_hair_stylist_1: { min: 148, max: 180, ratio: 0.13 },
+	custom_hair_stylist_2: { min: 148, max: 180, ratio: 0.13 },
+	custom_hair_stylist_3: { min: 148, max: 180, ratio: 0.13 },
 };
 
 const DENSE_COLUMN_WIDTHS: Record<string, ColumnWidthConfig> = {
@@ -49,6 +52,9 @@ const DENSE_COLUMN_WIDTHS: Record<string, ColumnWidthConfig> = {
 	price_list_rate: { min: 92, max: 104, ratio: 0.095 },
 	actions: { min: 56, max: 64, ratio: 0.06 },
 	posa_is_offer: { min: 72, max: 82, ratio: 0.075 },
+	custom_hair_stylist_1: { min: 136, max: 168, ratio: 0.12 },
+	custom_hair_stylist_2: { min: 136, max: 168, ratio: 0.12 },
+	custom_hair_stylist_3: { min: 136, max: 168, ratio: 0.12 },
 };
 
 const getColumnWidthConfig = (header: TableHeader, dense: boolean) =>

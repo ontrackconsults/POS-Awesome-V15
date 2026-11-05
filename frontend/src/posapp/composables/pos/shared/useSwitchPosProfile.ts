@@ -4,6 +4,10 @@ import { storeToRefs } from "pinia";
 import { setOpeningStorage } from "../../../../offline/index";
 import { useToastStore } from "../../../stores/toastStore.js";
 import { useUIStore } from "../../../stores/uiStore.js";
+import {
+	buildSkippedClosingInvoicesPrompt,
+	normalizeClosingShiftPreparationResponse,
+} from "./usePosShift";
 
 declare const frappe: any;
 
@@ -180,23 +184,41 @@ export function useSwitchPosProfile() {
 				},
 			);
 
-			if (closingData.message) {
-				await frappe.call(
-					"posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.submit_closing_shift",
-					{
-						closing_shift: JSON.stringify(closingData.message),
-					},
-				);
+			const closingResponse = normalizeClosingShiftPreparationResponse(closingData.message);
+			const closingShift = closingResponse.closing_shift;
+			if (!closingShift) {
+				toastStore.show({
+					title: __("Failed to prepare closing shift"),
+					color: "error",
+				});
+				return;
+			}
 
-				try {
-					await createOpeningForSelectedProfile(balanceDetails);
-				} catch (openError) {
-					console.warn(
-						"Opening shift with previous balances failed; retrying empty balances",
-						openError,
-					);
-					await createOpeningForSelectedProfile([]);
+			const skippedPrintedInvoices = Array.isArray(closingResponse.skipped_printed_invoices)
+				? closingResponse.skipped_printed_invoices
+				: [];
+			if (skippedPrintedInvoices.length) {
+				const confirmed = window.confirm(buildSkippedClosingInvoicesPrompt(skippedPrintedInvoices));
+				if (!confirmed) {
+					return;
 				}
+			}
+
+			await frappe.call(
+				"posawesome.posawesome.doctype.pos_closing_shift.pos_closing_shift.submit_closing_shift",
+				{
+					closing_shift: JSON.stringify(closingShift),
+				},
+			);
+
+			try {
+				await createOpeningForSelectedProfile(balanceDetails);
+			} catch (openError) {
+				console.warn(
+					"Opening shift with previous balances failed; retrying empty balances",
+					openError,
+				);
+				await createOpeningForSelectedProfile([]);
 			}
 		} catch (error) {
 			console.error("Failed to switch POS profile:", error);

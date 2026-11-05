@@ -427,6 +427,105 @@
 	padding-inline: 4px;
 }
 
+.posa-cart-table td[data-column-key="custom_hair_stylist_1"],
+.posa-cart-table td[data-column-key="custom_hair_stylist_2"],
+.posa-cart-table td[data-column-key="custom_hair_stylist_3"] {
+	min-width: 148px;
+	overflow: visible;
+	text-align: left;
+	padding-inline: 6px;
+}
+
+.posa-cart-staff-trigger {
+	justify-content: flex-start;
+	width: 100%;
+	max-width: 100%;
+	padding-inline: 8px;
+	gap: 6px;
+	font-size: 0.82rem;
+	font-weight: 600;
+	text-align: start;
+	appearance: none;
+	background: var(--pos-surface-raised);
+}
+
+.posa-cart-staff-trigger__icon,
+.posa-cart-staff-trigger__chevron {
+	flex: 0 0 auto;
+	opacity: 0.72;
+}
+
+.posa-cart-staff-trigger__name {
+	flex: 1 1 auto;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	text-align: start;
+}
+
+.posa-cart-staff-trigger--empty {
+	color: var(--pos-text-secondary);
+	font-weight: 500;
+}
+
+.posa-cart-staff-trigger--required {
+	border-color: color-mix(in srgb, var(--pos-error) 42%, var(--pos-outline));
+}
+
+.posa-cart-staff-trigger--open,
+.posa-cart-staff-trigger:hover,
+.posa-cart-staff-trigger:focus-visible {
+	border-color: var(--pos-primary);
+	background: var(--pos-primary-container);
+	box-shadow: 0 0 0 3px var(--pos-focus-halo);
+}
+
+.posa-cart-staff-menu {
+	min-width: 260px !important;
+	max-width: 320px;
+	padding: 0;
+	border: 1px solid var(--pos-border);
+	border-radius: 10px;
+	background: var(--pos-card-bg, var(--pos-surface-raised)) !important;
+	color: var(--pos-text-primary) !important;
+	box-shadow: 0 10px 24px var(--pos-shadow-dark, rgba(9, 37, 61, 0.18));
+	overflow: hidden;
+}
+
+.posa-cart-staff-panel {
+	background: transparent !important;
+	box-shadow: none !important;
+	border: 0 !important;
+}
+
+.posa-cart-staff-panel__search {
+	padding: 10px 10px 6px;
+}
+
+.posa-cart-staff-search {
+	width: 100%;
+}
+
+.posa-cart-staff-list {
+	max-height: 240px;
+	overflow-y: auto;
+	padding-bottom: 6px;
+}
+
+.posa-cart-staff-menu .v-list-item-title {
+	font-size: 0.85rem;
+	font-weight: 600;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.posa-cart-staff-clear .v-list-item-title {
+	color: var(--pos-text-secondary);
+	font-weight: 500;
+}
+
 .posa-cart-table:not(.posa-cart-table--counter-grid) td[data-column-key="price_list_rate"] > div,
 .posa-cart-table:not(.posa-cart-table--counter-grid) td[data-column-key="discount_percentage"] > div,
 .posa-cart-table:not(.posa-cart-table--counter-grid) td[data-column-key="discount_amount"] > div,
