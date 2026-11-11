@@ -177,6 +177,10 @@ function classifyBusinessCode(message: string, explicitCode?: string | null) {
 	return "BUSINESS_RULE";
 }
 
+const FRAPPE_BUSINESS_HTTP_STATUSES = new Set([
+	400, 401, 403, 404, 409, 417,
+]);
+
 function isRetryableTransportStatus(status: number | null) {
 	return (
 		status === null ||
@@ -185,6 +189,41 @@ function isRetryableTransportStatus(status: number | null) {
 		status === 429 ||
 		status >= 500
 	);
+}
+
+function getFrappeErrorPayload(error: any) {
+	if (!error || typeof error !== "object") {
+		return null;
+	}
+	if (error.responseJSON) {
+		return error.responseJSON;
+	}
+	if (error.xhr?.responseJSON) {
+		return error.xhr.responseJSON;
+	}
+	if (error._server_messages || error.exc_type || error.exception) {
+		return error;
+	}
+	return null;
+}
+
+function extractExceptionMessage(exception: unknown): string {
+	if (typeof exception !== "string") {
+		return "";
+	}
+	const trimmed = exception.trim();
+	if (!trimmed) {
+		return "";
+	}
+	const match = trimmed.match(/^(?:[\w.]+:\s*)+(.+)$/);
+	return (match?.[1] || trimmed).trim();
+}
+
+function isFrappeBusinessFailure(status: number | null, payload: any) {
+	if (payload?._server_messages || payload?.exc_type || payload?.exception) {
+		return true;
+	}
+	return status != null && FRAPPE_BUSINESS_HTTP_STATUSES.has(status);
 }
 
 function errorEnvelope<T>(
@@ -277,29 +316,37 @@ function normalizeTransportFailure<T>(
 	error: any,
 	requestId: string,
 ): ApiEnvelope<T> {
-	const responsePayload = error?.responseJSON || error?.xhr?.responseJSON;
+	const responsePayload = getFrappeErrorPayload(error);
+	const status =
+		Number(error?.status || error?.httpStatus || error?.xhr?.status || 0) ||
+		Number(responsePayload?.http_status_code || 0) ||
+		null;
 	const serverMessage =
 		extractServerMessage(responsePayload) ||
-		normalizeMessage(responsePayload?.message, "");
-	if (
-		serverMessage &&
-		classifyBusinessCode(serverMessage) === "TERMINAL_LOCKED"
-	) {
+		normalizeMessage(responsePayload?.message, "") ||
+		extractExceptionMessage(responsePayload?.exception);
+
+	if (isFrappeBusinessFailure(status, responsePayload)) {
+		const resolvedMessage = normalizeMessage(
+			serverMessage,
+			"Request failed",
+		);
+		const explicitCode =
+			responsePayload?.exc_type === "ValidationError" || status === 417
+				? "VALIDATION_ERROR"
+				: null;
 		return errorEnvelope<T>(requestId, getServerTime(responsePayload), {
-			code: "TERMINAL_LOCKED",
-			message: serverMessage,
+			code: classifyBusinessCode(resolvedMessage, explicitCode),
+			message: resolvedMessage,
 			retryable: false,
 		});
 	}
 
-	const status =
-		Number(error?.status || error?.httpStatus || error?.xhr?.status || 0) ||
-		null;
 	const statusText =
 		error?.statusText ||
 		error?.xhr?.statusText ||
 		error?.message ||
-		error?.responseJSON?.message;
+		responsePayload?.message;
 	const message = normalizeMessage(
 		statusText,
 		status ? `HTTP ${status}` : "Network request failed",

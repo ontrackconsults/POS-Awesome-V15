@@ -1170,6 +1170,7 @@ def _clear_stale_party_fields_in_payload(
         "contact_mobile",
         "contact_email",
         "territory",
+        "customer_group",
     )
 
     for fieldname in customer_dependent_fields:
@@ -1202,6 +1203,7 @@ def _clear_stale_party_fields_for_customer_change(
         "contact_mobile",
         "contact_email",
         "territory",
+        "customer_group",
     )
 
     for fieldname in customer_dependent_fields:
@@ -1241,6 +1243,7 @@ def _get_mutable_invoice_doc(data, doctype, pos_profile, company):
             "contact_mobile",
             "contact_email",
             "territory",
+            "customer_group",
         )
     }
     if cint(invoice_doc.docstatus) != 0:

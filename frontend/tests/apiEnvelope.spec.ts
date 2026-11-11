@@ -60,6 +60,35 @@ describe("api envelope handling", () => {
 		});
 	});
 
+	it("surfaces Frappe 417 validation messages instead of a network failure", async () => {
+		(frappe.call as any).mockImplementation(({ error }: any) => {
+			error({
+				exc_type: "ValidationError",
+				exception:
+					"frappe.exceptions.ValidationError: Credit is not allowed for this Customer Group",
+				_server_messages: JSON.stringify([
+					JSON.stringify({
+						message:
+							"Credit is not allowed for this Customer Group",
+						title: "Message",
+						indicator: "red",
+					}),
+				]),
+			});
+		});
+
+		const result = await api.callEnvelope("pos.test.credit_blocked");
+
+		expect(result).toMatchObject({
+			ok: false,
+			error: {
+				code: "VALIDATION_ERROR",
+				message: "Credit is not allowed for this Customer Group",
+				retryable: false,
+			},
+		});
+	});
+
 	it("preserves a terminal lock server error as an actionable business code", async () => {
 		(frappe.call as any).mockImplementation(({ error }: any) => {
 			error({

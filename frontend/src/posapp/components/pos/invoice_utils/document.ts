@@ -81,6 +81,7 @@ function clearStalePartyFieldsForCustomerChange(
 		shipping_address_name: customerDetails?.shipping_address || null,
 		contact_person: customerDetails?.contact_person || null,
 		territory: customerDetails?.territory || null,
+		customer_group: customerDetails?.customer_group || null,
 	};
 
 	const customerDependentFields = [
@@ -93,6 +94,7 @@ function clearStalePartyFieldsForCustomerChange(
 		"contact_mobile",
 		"contact_email",
 		"territory",
+		"customer_group",
 	];
 
 	customerDependentFields.forEach((fieldname) => {
@@ -237,6 +239,11 @@ export function get_invoice_doc(context: any) {
 		customerChanged,
 		matchingCustomerDetails,
 	);
+	if (matchingCustomerDetails.customer_group) {
+		doc.customer_group = matchingCustomerDetails.customer_group;
+	} else if (customerChanged) {
+		doc.customer_group = null;
+	}
 	if (doc.doctype === "Quotation") {
 		doc.quotation_to = doc.quotation_to || "Customer";
 		if (resolvedCustomer) {

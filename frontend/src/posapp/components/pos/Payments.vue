@@ -380,6 +380,7 @@ import { useEmployeeStore } from "../../stores/employeeStore";
 // Composables
 import { usePaymentCalculations } from "../../composables/pos/payments/usePaymentCalculations";
 import { usePaymentSubmission } from "../../composables/pos/payments/usePaymentSubmission";
+import { isApiEnvelopeError } from "../../services/api";
 import { useRedemptionLogic } from "../../composables/pos/payments/useRedemptionLogic";
 import { usePaymentPrinting } from "../../composables/pos/payments/usePaymentPrinting";
 import { usePaymentMethods } from "../../composables/pos/payments/usePaymentMethods";
@@ -1971,7 +1972,9 @@ const submitInvoiceWrapper = async (print, callbackOverrides = {}, options = {})
 		console.error("Submission failed propagate:", error);
 		restorePaymentLinesAfterFailedSubmit();
 
-		if (error?.message) {
+		if (isApiEnvelopeError(error)) {
+			frappe.utils.play_sound("error");
+		} else if (error?.message) {
 			toastStore.show({
 				title: error.message,
 				color: "error",

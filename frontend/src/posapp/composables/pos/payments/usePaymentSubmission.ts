@@ -294,12 +294,42 @@ export function usePaymentSubmission(options: PaymentSubmissionOptions) {
 		}
 	};
 
+	const getInvoiceCustomerLabel = () => {
+		const doc = unref(invoiceDoc);
+		const info = unref(options.customerInfo);
+		return String(
+			info?.customer_name ||
+				doc?.customer_name ||
+				info?.name ||
+				doc?.customer ||
+				"",
+		).trim();
+	};
+
+	const formatCashierValidationMessage = (message: string) => {
+		const resolved = String(message || "").trim();
+		if (!resolved) {
+			return __("Unable to submit invoice");
+		}
+
+		const customer = getInvoiceCustomerLabel();
+		if (!customer || resolved.includes(customer)) {
+			return resolved;
+		}
+
+		const lower = resolved.toLowerCase();
+		if (
+			lower.includes("credit is not allowed") ||
+			lower.includes("customer group")
+		) {
+			return __("{0}: {1}", [resolved, customer]);
+		}
+
+		return resolved;
+	};
+
 	const buildSubmissionFailureToast = (exc: any, message: string) => {
 		const code = getSubmissionErrorCode(exc);
-		const requestId = isApiEnvelopeError(exc) ? exc.requestId : null;
-		const detail = requestId
-			? __("Request ID: {0}", [requestId])
-			: undefined;
 
 		if (
 			code === "TIMEOUT" ||
@@ -308,22 +338,22 @@ export function usePaymentSubmission(options: PaymentSubmissionOptions) {
 		) {
 			return {
 				title: __("Connection problem while submitting invoice"),
-				detail: detail ? `${message}\n${detail}` : message,
+				detail: message || undefined,
 				color: "error",
 			};
 		}
 
 		if (code === "VALIDATION_ERROR" || code === "BUSINESS_RULE") {
 			return {
-				title: __("Unable to submit invoice"),
-				detail: detail ? `${message}\n${detail}` : message,
+				title: formatCashierValidationMessage(message),
 				color: "error",
 			};
 		}
 
 		return {
-			title: __("Error submitting invoice: ") + message,
-			detail,
+			title: message
+				? __("Error submitting invoice: {0}", [message])
+				: __("Error submitting invoice"),
 			color: "error",
 		};
 	};

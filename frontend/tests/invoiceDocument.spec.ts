@@ -38,6 +38,7 @@ describe("get_invoice_doc", () => {
 			customer_info: {
 				customer: "CUST-NEW",
 				customer_name: "New Customer",
+				customer_group: "Credit Allowed",
 			},
 			customer: "CUST-NEW",
 			isReturnInvoice: false,
@@ -59,6 +60,7 @@ describe("get_invoice_doc", () => {
 				name: "SINV-DRAFT",
 				customer: "CUST-OLD",
 				customer_name: "Old Customer",
+				customer_group: "No Credit",
 				payments: [],
 				taxes: [],
 			},
@@ -68,6 +70,7 @@ describe("get_invoice_doc", () => {
 
 		expect(doc.customer).toBe("CUST-NEW");
 		expect(doc.customer_name).toBe("New Customer");
+		expect(doc.customer_group).toBe("Credit Allowed");
 		expect(doc.ignore_pricing_rule).toBe(1);
 	});
 
@@ -88,6 +91,7 @@ describe("get_invoice_doc", () => {
 			customer_info: {
 				customer: "CUST-NEW",
 				customer_name: "New Customer",
+				customer_group: "Credit Allowed",
 			},
 			customer: "CUST-NEW",
 			isReturnInvoice: false,
@@ -117,6 +121,7 @@ describe("get_invoice_doc", () => {
 				contact_mobile: "0300",
 				contact_email: "old@example.com",
 				territory: "Old Territory",
+				customer_group: "No Credit",
 				payments: [],
 				taxes: [],
 			},
@@ -134,6 +139,7 @@ describe("get_invoice_doc", () => {
 		expect(doc.contact_mobile).toBeNull();
 		expect(doc.contact_email).toBeNull();
 		expect(doc.territory).toBeNull();
+		expect(doc.customer_group).toBe("Credit Allowed");
 	});
 
 	it("ignores mismatched cached customer info when resolving a different customer", () => {

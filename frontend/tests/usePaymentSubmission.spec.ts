@@ -1716,7 +1716,7 @@ describe("usePaymentSubmission", () => {
 		);
 	});
 
-	it("maps validation envelope failures and preserves the request id", async () => {
+	it("maps validation envelope failures to a cashier-facing message", async () => {
 		const invoiceService = (
 			await import("../src/posapp/services/invoiceService")
 		).default;
@@ -1780,18 +1780,95 @@ describe("usePaymentSubmission", () => {
 			}),
 		).rejects.toThrow("Customer is required");
 
-		expect(toastStore.show).toHaveBeenCalledWith(
-			expect.objectContaining({
-				title: "Unable to submit invoice",
-				detail: expect.stringContaining("req-validation-1"),
-				color: "error",
-			}),
-		);
+		expect(toastStore.show).toHaveBeenCalledWith({
+			title: "Customer is required",
+			color: "error",
+		});
 		expect(consoleError).toHaveBeenCalledWith(
 			"Error submitting invoice:",
 			expect.objectContaining({
 				code: "VALIDATION_ERROR",
 				requestId: "req-validation-1",
+			}),
+		);
+		consoleError.mockRestore();
+	});
+
+	it("includes the customer name in credit-block validation toasts", async () => {
+		const invoiceService = (
+			await import("../src/posapp/services/invoiceService")
+		).default;
+		(invoiceService.submitInvoice as any).mockRejectedValue(
+			new ApiEnvelopeError({
+				ok: false,
+				data: null,
+				error: {
+					code: "VALIDATION_ERROR",
+					message: "Credit is not allowed for this Customer Group",
+					retryable: false,
+				},
+				requestId: "req-credit-1",
+				serverTime: "2026-05-01T06:00:00Z",
+			}),
+		);
+		const consoleError = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => undefined);
+		const toastStore = { show: vi.fn() };
+
+		const invoiceDoc = ref<any>({
+			name: "ACC-SINV-CREDIT",
+			doctype: "Sales Invoice",
+			customer: "CUST-001",
+			customer_name: "Jane Doe",
+			is_return: 0,
+			items: [{ item_code: "ITEM-1", qty: 1 }],
+			payments: [{ mode_of_payment: "Cash", amount: 0, type: "Cash" }],
+			rounded_total: 100,
+			grand_total: 100,
+		});
+
+		const { submitInvoice } = usePaymentSubmission({
+			invoiceDoc,
+			posProfile: ref({
+				posa_allow_submissions_in_background_job: 0,
+				create_pos_invoice_instead_of_sales_invoice: 0,
+			}),
+			stockSettings: ref({}),
+			invoiceType: ref("Invoice"),
+			formatFloat: (value) => Number(value || 0),
+			stores: {
+				toastStore,
+				uiStore: {
+					setLastInvoice: vi.fn(),
+					setLastStockAdjustment: vi.fn(),
+				},
+				customersStore: { setSelectedCustomer: vi.fn() },
+				invoiceStore: { invoiceDoc: invoiceDoc.value },
+			},
+			isCashback: ref(false),
+			paidChange: ref(0),
+			creditChange: ref(0),
+			redeemedCustomerCredit: ref(0),
+			customerCreditDict: ref([]),
+			diff_payment: ref(0),
+		});
+
+		await expect(
+			submitInvoice(false, {
+				onFinishNavigation: vi.fn(),
+			}),
+		).rejects.toThrow("Credit is not allowed for this Customer Group");
+
+		expect(toastStore.show).toHaveBeenCalledWith({
+			title: "Credit is not allowed for this Customer Group: Jane Doe",
+			color: "error",
+		});
+		expect(consoleError).toHaveBeenCalledWith(
+			"Error submitting invoice:",
+			expect.objectContaining({
+				code: "VALIDATION_ERROR",
+				requestId: "req-credit-1",
 			}),
 		);
 		consoleError.mockRestore();
