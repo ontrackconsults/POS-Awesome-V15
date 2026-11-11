@@ -13,6 +13,7 @@ const maliciousCustomer = {
 	email_id: '<img src=x onerror=alert(1)>',
 	mobile_no: "<script>alert(1)</script>",
 	primary_address: '<img src=x onerror=alert(1)>',
+	customer_group: "<img src=x onerror=alert(1)>",
 };
 
 const CustomerDropdownItem = defineComponent({
@@ -28,6 +29,7 @@ const CustomerDropdownItem = defineComponent({
 			<div v-if="item.raw.tax_id">TAX ID: {{ item.raw.tax_id }}</div>
 			<div v-if="item.raw.email_id">Email: {{ item.raw.email_id }}</div>
 			<div v-if="item.raw.mobile_no">Mobile No: {{ item.raw.mobile_no }}</div>
+			<div v-if="item.raw.customer_group">Customer Group: {{ item.raw.customer_group }}</div>
 			<div v-if="item.raw.primary_address">Primary Address: {{ item.raw.primary_address }}</div>
 		</div>
 	`,
@@ -45,6 +47,7 @@ describe("Customer dropdown XSS regression", () => {
 		expect(wrapper.text()).toContain("TAX ID: <script>alert(1)</script>");
 		expect(wrapper.text()).toContain("Email: <img src=x onerror=alert(1)>");
 		expect(wrapper.text()).toContain("Mobile No: <script>alert(1)</script>");
+		expect(wrapper.text()).toContain("Customer Group: <img src=x onerror=alert(1)>");
 		expect(wrapper.text()).toContain("Primary Address: <img src=x onerror=alert(1)>");
 		expect(wrapper.find("img").exists()).toBe(false);
 		expect(wrapper.find("script").exists()).toBe(false);
@@ -55,7 +58,11 @@ describe("Customer dropdown XSS regression", () => {
 		expect(customerSource).toContain('{{ __("ID") }}: {{ item.raw.name }}');
 		expect(customerSource).toContain('{{ __("TAX ID") }}: {{ item.raw.tax_id }}');
 		expect(customerSource).toContain('{{ __("Email") }}: {{ item.raw.email_id }}');
-		expect(customerSource).toContain('{{ __("Mobile No") }}: {{ item.raw.mobile_no }}');
+		expect(customerSource).toContain('{{ __("Mobile No") }}:');
+		expect(customerSource).toContain(
+			"{{ item.raw.custom_search_mobile_no || item.raw.mobile_no }}",
+		);
+		expect(customerSource).toContain('{{ __("Customer Group") }}: {{ item.raw.customer_group }}');
 		expect(customerSource).toContain('{{ __("Primary Address") }}: {{ item.raw.primary_address }}');
 	});
 

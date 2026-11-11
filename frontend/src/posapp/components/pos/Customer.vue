@@ -67,6 +67,9 @@
 					<v-list-item-subtitle v-if="item.raw.custom_customer_id">
 						<div v-html="`ID: ${item.raw.custom_customer_id}`"></div>
 					</v-list-item-subtitle>
+					<v-list-item-subtitle v-if="item.raw.customer_group">
+						<div>{{ __("Customer Group") }}: {{ item.raw.customer_group }}</div>
+					</v-list-item-subtitle>
 					<v-list-item-subtitle v-if="item.raw.tax_id">
 						<div v-html="`TAX ID: ${item.raw.tax_id}`"></div>
 					</v-list-item-subtitle>
