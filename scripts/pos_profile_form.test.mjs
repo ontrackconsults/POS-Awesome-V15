@@ -105,3 +105,36 @@ test("POS Profile refresh installs queries after grids initialize", async () => 
 		account_type: "Cash",
 	});
 });
+
+test("POS Profile print format queries include POS Invoice and Sales Invoice", async () => {
+	const handlers = await loadPosProfileHandlers();
+	const frm = makeForm({
+		print_format: {},
+		print_format_for_online: {},
+		print_format_copy: {},
+		si_print_format: {},
+		posa_print_format_rules: {
+			grid: { get_field: () => ({}) },
+		},
+	});
+
+	handlers.refresh(frm);
+
+	const expected = [["Print Format", "doc_type", "in", ["POS Invoice", "Sales Invoice"]]];
+	assert.equal(frm.calls.length, 5);
+	for (const call of frm.calls) {
+		const query = call.length === 3 ? call[2] : call[1];
+		assert.deepEqual(JSON.parse(JSON.stringify(query().filters)), expected);
+	}
+	assert.deepEqual(
+		frm.calls.map((call) => call[0]),
+		[
+			"print_format",
+			"print_format_for_online",
+			"print_format_copy",
+			"si_print_format",
+			"print_format",
+		],
+	);
+	assert.equal(frm.calls[4][1], "posa_print_format_rules");
+});

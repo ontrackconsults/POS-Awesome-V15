@@ -80,6 +80,21 @@ const set_pos_profile_queries = (frm) => {
 			},
 		};
 	});
+
+	const invoice_print_formats = () => ({
+		filters: [["Print Format", "doc_type", "in", ["POS Invoice", "Sales Invoice"]]],
+	});
+
+	[
+		"print_format",
+		"print_format_for_online",
+		"print_format_copy",
+		"si_print_format",
+	].forEach((fieldname) => {
+		set_field_query(fieldname, invoice_print_formats);
+	});
+
+	set_child_query("print_format", "posa_print_format_rules", invoice_print_formats);
 };
 
 frappe.ui.form.on("POS Profile", {
