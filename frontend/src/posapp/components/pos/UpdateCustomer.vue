@@ -40,7 +40,7 @@
 									class="pos-themed-input"
 									v-model="customer_first_name"
 									required
-									@input="updateCustomerName"
+									@update:model-value="updateCustomerName"
 								></v-text-field>
 							</v-col>
 							<v-col cols="6">
@@ -52,7 +52,7 @@
 									class="pos-themed-input"
 									v-model="customer_last_name"
 									required
-									@input="updateCustomerName"
+									@update:model-value="updateCustomerName"
 								></v-text-field>
 							</v-col>
 							<!-- <v-col cols="6">
@@ -76,7 +76,7 @@
 									v-model="mobile_no"
 									required
 									type="tel"
-									@input="limitMobileNoForGhana"
+									@update:model-value="limitMobileNoForGhana"
 								></v-text-field>
 							</v-col>
 							<v-col cols="12" v-if="!hideNonEssential">

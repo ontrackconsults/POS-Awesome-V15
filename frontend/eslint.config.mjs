@@ -92,6 +92,14 @@ export default [
 		},
 	},
 	{
+		files: ["src/sw.js"],
+		languageOptions: {
+			globals: {
+				...globals.serviceworker,
+			},
+		},
+	},
+	{
 		files: ["src/posapp/workers/**/*.js"],
 		languageOptions: {
 			globals: {
